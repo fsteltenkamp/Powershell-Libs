@@ -42,6 +42,7 @@ function Update-Libs {
     foreach ($lib in $Libs) {
         Write-Host "Processing library: ${lib}"
         $libPath = "${libsPath}\${lib}.ps1"
+        Write-Host "Library path: ${libPath}"
         # Update it:
         $updateUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/libs/${lib}.ps1"
         $verUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/versions/${lib}.version"
