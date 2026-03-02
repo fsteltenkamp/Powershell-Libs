@@ -18,8 +18,10 @@ function Update-Libs {
         [string[]]$Libs
     )
 
+    # Get current directory:
+    $currentDir = Get-Location
     # Take the path of the current script and append the libs folder
-    $libsPath = "${PSScriptRoot}\libs"
+    $libsPath = "${currentDir}\libs"
 
     # Check if the libs folder exists
     if (-not (Test-Path -Path $libsPath)) {
