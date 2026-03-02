@@ -19,7 +19,7 @@ function Update-Libs {
     )
 
     # Take the path of the current script and append the libs folder
-    $libsPath = "$PSScriptRoot\libs"
+    $libsPath = "${PSScriptRoot}\libs"
 
     # Check if the libs folder exists
     if (-not (Test-Path -Path $libsPath)) {
@@ -38,15 +38,16 @@ function Update-Libs {
 
     # Loop through the specified libraries, update and import them:
     foreach ($lib in $Libs) {
-        $libPath = "$libsPath\$lib.ps1"
+        Write-Host "Processing library: ${lib}"
+        $libPath = "${libsPath}\${lib}.ps1"
         # Update it:
-        $updateUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/libs/$lib.ps1"
-        $verUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/versions/$lib.version"
+        $updateUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/libs/${lib}.ps1"
+        $verUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/versions/${lib}.version"
         # Get the latest version number from the repository:
         try {
             $latestVersion = (Invoke-WebRequest -Uri $verUrl -UseBasicParsing).Content.Trim()
         } catch {
-            Write-Host "Error fetching version for $lib: $_"
+            Write-Host "Error fetching version for $lib."
             continue
         }
         # Check if the library file exists locally:
@@ -54,30 +55,30 @@ function Update-Libs {
             # If it exists, read the local version number:
             $localVersion = Get-Content -Path $libPath -Raw | Select-String -Pattern '# Version : (\d+\.\d+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
             if ($localVersion -ne $latestVersion) {
-                Write-Host "Updating $lib from version $localVersion to $latestVersion..."
+                Write-Host "Updating ${lib} from version ${localVersion} to ${latestVersion}..."
                 try {
                     Invoke-WebRequest -Uri $updateUrl -OutFile $libPath -UseBasicParsing
                 } catch {
-                    Write-Host "Error updating $lib: $_"
+                    Write-Host "Error updating ${lib}: ${_}"
                 }
             } else {
-                Write-Host "$lib is already up to date (version $localVersion)."
+                Write-Host "$lib is already up to date (version ${localVersion})."
             }
         } else {
             # If it doesn't exist, download it:
-            Write-Host "Downloading $lib version $latestVersion..."
+            Write-Host "Downloading ${lib} version ${latestVersion}..."
             try {
                 Invoke-WebRequest -Uri $updateUrl -OutFile $libPath -UseBasicParsing
             } catch {
-                Write-Host "Error downloading $lib: $_"
+                Write-Host "Error downloading ${lib}: ${_}"
             }
         }
         # Import the library:
         try {
             . $libPath
-            Write-Host "$lib imported successfully."
+            Write-Host "${lib} imported successfully."
         } catch {
-            Write-Host "Error importing $lib: $_"
+            Write-Host "Error importing ${lib}: ${_}"
         }
     }
 }
