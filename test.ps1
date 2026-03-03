@@ -14,7 +14,7 @@
 #>
 
 # Define libraries to import:
-$libs = @("file", "crypt", "util", "http")
+$libs = @("logger", "file", "crypt", "util", "http")
 # Download and import the Updater Script:
 $updaterUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/updater.ps1"
 $updaterPath = "$PSScriptRoot\updater.ps1"
@@ -24,6 +24,19 @@ Import-Module $updaterPath -Force
 Update-Libs -Libs $libs
 
 # Test if the libraries were imported successfully by calling a function from each library:
+
+# Logger library test:
+try {
+    setLogLevel -Level "debug"
+    enableLogfile -FilePath "$PSScriptRoot\testlog.txt"
+    log "info" "This is a test log message."
+    if (-not (Test-Path -Path "$PSScriptRoot\testlog.txt")) {
+        throw "Failed to create log file."
+    }
+    Write-Host "Logger library functions are working."
+} catch {
+    Write-Host "Error: Logger library functions are not working."
+}
 
 # crypt library test:
 try {
