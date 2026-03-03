@@ -30,7 +30,7 @@ function Set-XmlFileLocation {
         [string]$Path
     )
     $global:xmlFilePath = $Path
-    log "info" "WinSAT XML file location set to '$Path'."
+    Write-Host "WinSAT XML file location set to '$Path'."
 }
 
 function Enable-XmlOutput {
@@ -39,7 +39,7 @@ function Enable-XmlOutput {
         Enables saving WinSAT results as XML.
     #>
     $global:saveAsXml = $true
-    log "info" "WinSAT XML output enabled."
+    Write-Host "WinSAT XML output enabled."
 }
 
 function Disable-XmlOutput {
@@ -48,7 +48,7 @@ function Disable-XmlOutput {
         Disables saving WinSAT results as XML.
     #>
     $global:saveAsXml = $false
-    log "info" "WinSAT XML output disabled."
+    Write-Host "WinSAT XML output disabled."
 }
 
 function Set-JsonFileLocation {
@@ -63,7 +63,7 @@ function Set-JsonFileLocation {
         [string]$Path
     )
     $global:jsonFilePath = $Path
-    log "info" "WinSAT JSON file location set to '$Path'."
+    Write-Host "WinSAT JSON file location set to '$Path'."
 }
 
 function Enable-JsonOutput {
@@ -74,7 +74,7 @@ function Enable-JsonOutput {
     $global:saveAsJson = $true
     # due to winsat not supporting JSON output natively, we will convert the XML output to JSON after the assessment is completed
     $global:saveAsXml = $true # ensure XML output is enabled to have the source data for JSON conversion
-    log "info" "WinSAT JSON output enabled."
+    Write-Host "WinSAT JSON output enabled."
 }
 
 function Disable-JsonOutput {
@@ -83,7 +83,7 @@ function Disable-JsonOutput {
         Disables saving WinSAT results as JSON.
     #>
     $global:saveAsJson = $false
-    log "info" "WinSAT JSON output disabled."
+    Write-Host "WinSAT JSON output disabled."
 }
 
 function Convert-ToJson {
@@ -96,12 +96,12 @@ function Convert-ToJson {
             $xmlContent = Get-Content -Path $global:xmlFilePath
             $jsonContent = $xmlContent | ConvertTo-Json
             Set-Content -Path $global:jsonFilePath -Value $jsonContent
-            log "info" "WinSAT results converted to JSON and saved to '$global:jsonFilePath'."
+            Write-Host "WinSAT results converted to JSON and saved to '$global:jsonFilePath'."
         } catch {
-            log "error" "An error occurred while converting WinSAT XML to JSON: $_"
+            Write-Host "An error occurred while converting WinSAT XML to JSON: $_"
         }
     } else {
-        log "error" "WinSAT XML file not found at '$global:xmlFilePath'. Cannot convert to JSON."
+        Write-Host "WinSAT XML file not found at '$global:xmlFilePath'. Cannot convert to JSON."
     }
 }
 
@@ -119,14 +119,14 @@ function Invoke-WinSAT {
     try {
         $winSatPath = "$env:windir\system32\winsat.exe"
         if (Test-Path -Path $winSatPath) {
-            log "info" "Running WinSAT with arguments: $Arguments"
+            Write-Host "Running WinSAT with arguments: $Arguments"
             Start-Process -FilePath $winSatPath -ArgumentList $Arguments -Wait -NoNewWindow
-            log "info" "WinSAT assessment completed."
+            Write-Host "WinSAT assessment completed."
         } else {
-            log "error" "WinSAT executable not found at '$winSatPath'."
+            Write-Host "WinSAT executable not found at '$winSatPath'."
         }
     } catch {
-        log "error" "An error occurred while running WinSAT: $_"
+        Write-Host "An error occurred while running WinSAT: $_"
     }
 }
 
@@ -261,7 +261,7 @@ function Get-WinSATResults {
             # return content of the xml file
             return Get-Content -Path $global:xmlFilePath
         } else {
-            log "error" "WinSAT XML file not found at '$global:xmlFilePath'."
+            Write-Host "WinSAT XML file not found at '$global:xmlFilePath'."
             return $null
         }
     } elseif ($Format -eq "json") {
@@ -273,7 +273,7 @@ function Get-WinSATResults {
             # return content of the json file
             return Get-Content -Path $global:jsonFilePath
         } else {
-            log "error" "WinSAT JSON file not found at '$global:jsonFilePath'."
+            Write-Host "WinSAT JSON file not found at '$global:jsonFilePath'."
             return $null
         }
     }

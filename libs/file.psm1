@@ -28,10 +28,10 @@ function New-Folder {
         New-Item -Path $Path -ItemType Directory -ErrorAction Stop | Out-Null
     }
     catch {
-        log "error" -Message "Unable to create directory '$Path'. Error was: $_"
+        Write-Host "Error occurred while creating directory '$Path': $_"
         throw
     }
-    log "success" "Successfully created directory '$Path'."
+    Write-Host "Directory '$Path' created successfully."
 }
 
 function Confirm-Folder {
@@ -46,9 +46,9 @@ function Confirm-Folder {
         [string]$Path
     )
     if (Test-Path -Path $Path -PathType Container) {
-        log "debug" "$Path exists."
+        Write-Host "$Path exists."
     } else {
-        log "debug" "$Path does not exist, creating..."
+        Write-Host "$Path does not exist, creating..."
         New-Folder -Path $Path
         Confirm-Folder -Path $Path
     }

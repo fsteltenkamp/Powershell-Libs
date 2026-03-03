@@ -37,9 +37,9 @@ function setLogLevel {
     )
     if ($logLevelValues.ContainsKey($Level)) {
         $global:logLevel = $Level
-        log "info" "Log level set to '$Level'."
+        Write-Host "Log level set to '$Level'."
     } else {
-        log "error" "Invalid log level '$Level'. Valid levels are: $($logLevelValues.Keys -join ", ")."
+        Write-Host "Invalid log level '$Level'. Valid levels are: $($logLevelValues.Keys -join ", ")."
     }
 }
 
@@ -56,7 +56,7 @@ function enableLogfile {
     )
     $global:logFileEnabled = $true
     $global:logFilePath = $FilePath
-    log "info" "Logging to file enabled at '$FilePath'."
+    Write-Host "Logging to file enabled at '$FilePath'."
 }
 
 function log {

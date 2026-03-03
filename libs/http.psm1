@@ -99,7 +99,7 @@ function Resolve-UrlPlaceholders {
         [string]$Url
     )
     $Url = $Url.Replace('{dId}', $dId)
-    log "debug" "URL after replacing placeholders: $Url"
+    Write-Host "URL after replacing placeholders: $Url"
     return $Url
 }
 
