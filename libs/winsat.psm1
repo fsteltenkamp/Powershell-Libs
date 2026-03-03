@@ -151,11 +151,41 @@ function Invoke-WinSATDiskTest {
         If a drive letter is provided, it will test that specific drive. Otherwise, it will test all drives.
     .PARAMETER DriveLetter
         The drive letter to test (e.g., "C:"). If not provided, all drives will be tested.
+    .PARAMETER ReadOnly
+        If specified, only the read performance will be tested.
+    .PARAMETER WriteOnly
+        If specified, only the write performance will be tested.
+    .PARAMETER Sequential
+        If specified, the test will focus on sequential read/write performance. Otherwise, it will include both sequential and random tests.
+    .PARAMETER Random
+        If specified, the test will focus on random read/write performance. Otherwise, it will include both sequential and random tests.
+     #>
     #>
     param(
         [string]$DriveLetter = $null
+        [switch]$ReadOnly,
+        [switch]$WriteOnly,
+        [switch]$Sequential,
+        [switch]$Random
     )
-    $winSatArgs = "disk -seq -read -write"
+    $winSatArgs = "disk "
+    # Determine the type of disk test based on the parameters:
+    if ($ReadOnly.IsPresent -and -not $WriteOnly.IsPresent) {
+        $winSatArgs += "-read "
+    } elseif ($WriteOnly.IsPresent -and -not $ReadOnly.IsPresent) {
+        $winSatArgs += "-write "
+    } else {
+        $winSatArgs += "-read -write "
+    }
+    # Determine the type of disk test based on the parameters:
+    if ($Sequential.IsPresent -and -not $Random.IsPresent) {
+        $winSatArgs += "-seq "
+    } elseif ($Random.IsPresent -and -not $Sequential.IsPresent) {
+        $winSatArgs += "-rand "
+    } else {
+        $winSatArgs += "-seq -rand "
+    }
+    # If a drive letter is provided, add it to the arguments:
     if ($null -ne $DriveLetter) {
         $winSatArgs += " -drive $DriveLetter"
     }
