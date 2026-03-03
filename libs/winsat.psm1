@@ -159,10 +159,9 @@ function Invoke-WinSATDiskTest {
         If specified, the test will focus on sequential read/write performance. Otherwise, it will include both sequential and random tests.
     .PARAMETER Random
         If specified, the test will focus on random read/write performance. Otherwise, it will include both sequential and random tests.
-     #>
     #>
     param(
-        [string]$DriveLetter = $null
+        [string]$DriveLetter = $null,
         [switch]$ReadOnly,
         [switch]$WriteOnly,
         [switch]$Sequential,
@@ -170,26 +169,78 @@ function Invoke-WinSATDiskTest {
     )
     $winSatArgs = "disk "
     # Determine the type of disk test based on the parameters:
-    if ($ReadOnly.IsPresent -and -not $WriteOnly.IsPresent) {
-        $winSatArgs += "-read "
-    } elseif ($WriteOnly.IsPresent -and -not $ReadOnly.IsPresent) {
-        $winSatArgs += "-write "
-    } else {
-        $winSatArgs += "-read -write "
-    }
+    if ($ReadOnly.IsPresent -and -not $WriteOnly.IsPresent) {$winSatArgs += "-read "}
+    elseif ($WriteOnly.IsPresent -and -not $ReadOnly.IsPresent) {$winSatArgs += "-write "}
+    else {$winSatArgs += "-read -write "}
     # Determine the type of disk test based on the parameters:
-    if ($Sequential.IsPresent -and -not $Random.IsPresent) {
-        $winSatArgs += "-seq "
-    } elseif ($Random.IsPresent -and -not $Sequential.IsPresent) {
-        $winSatArgs += "-rand "
-    } else {
-        $winSatArgs += "-seq -rand "
-    }
+    if ($Sequential.IsPresent -and -not $Random.IsPresent) {$winSatArgs += "-seq "}
+    elseif ($Random.IsPresent -and -not $Sequential.IsPresent) {$winSatArgs += "-rand "}
+    else {$winSatArgs += "-seq -rand "}
     # If a drive letter is provided, add it to the arguments:
-    if ($null -ne $DriveLetter) {
-        $winSatArgs += " -drive $DriveLetter"
-    }
+    if ($null -ne $DriveLetter) {$winSatArgs += " -drive $DriveLetter"}
     Invoke-WinSAT -Arguments $winSatArgs
+}
+
+function Invoke-WinSATCpuTest {
+    <#
+    .SYNOPSIS
+        Runs the WinSAT CPU performance test.
+    .PARAMETER Encryption
+        If specified, includes an AES encryption benchmark.
+    .PARAMETER Compression
+        If specified, includes a compression benchmark.
+    #>
+    param(
+        [switch]$Encryption,
+        [switch]$Compression
+    )
+    $winSatArgs = "cpu"
+    if ($Encryption.IsPresent)  { $winSatArgs += " -encryption" }
+    if ($Compression.IsPresent) { $winSatArgs += " -compression" }
+    if ($global:saveAsXml)      { $winSatArgs += " -xml $global:xmlFilePath" }
+    Invoke-WinSAT -Arguments $winSatArgs
+}
+
+function Invoke-WinSATMemoryTest {
+    <#
+    .SYNOPSIS
+        Runs the WinSAT memory (RAM) bandwidth test.
+    #>
+    $winSatArgs = "mem"
+    if ($global:saveAsXml) { $winSatArgs += " -xml $global:xmlFilePath" }
+    Invoke-WinSAT -Arguments $winSatArgs
+}
+
+function Invoke-WinSATGraphicsTest {
+    <#
+    .SYNOPSIS
+        Runs WinSAT graphics tests.
+    .DESCRIPTION
+        Runs the Direct3D benchmark and/or the Desktop Window Manager (DWM) benchmark.
+        By default both are run. Use -D3DOnly or -DwmOnly to run just one.
+    .PARAMETER D3DOnly
+        If specified, only the Direct3D benchmark is run.
+    .PARAMETER DwmOnly
+        If specified, only the Desktop Window Manager benchmark is run.
+    .PARAMETER DirectX10
+        If specified, the Direct3D test targets DirectX 10 instead of DirectX 9.
+    #>
+    param(
+        [switch]$D3DOnly,
+        [switch]$DwmOnly,
+        [switch]$DirectX10
+    )
+    $dxFlag = if ($DirectX10.IsPresent) { "-dx10" } else { "-dx9" }
+    $xmlArg = if ($global:saveAsXml) { " -xml $global:xmlFilePath" } else { "" }
+
+    if ($D3DOnly.IsPresent) {
+        Invoke-WinSAT -Arguments "d3d $dxFlag$xmlArg"
+    } elseif ($DwmOnly.IsPresent) {
+        Invoke-WinSAT -Arguments "dwm$xmlArg"
+    } else {
+        Invoke-WinSAT -Arguments "d3d $dxFlag$xmlArg"
+        Invoke-WinSAT -Arguments "dwm$xmlArg"
+    }
 }
 
 function Get-WinSATResults {
@@ -228,4 +279,4 @@ function Get-WinSATResults {
     }
 }
 
-Export-ModuleMember -Function Set-XmlFileLocation, Enable-XmlOutput, Disable-XmlOutput, Set-JsonFileLocation, Enable-JsonOutput, Disable-JsonOutput, Convert-ToJson, Invoke-WinSAT, Invoke-WinSATDiskTest, Invoke-FullWinSAT, Get-WinSATResults
+Export-ModuleMember -Function Set-XmlFileLocation, Enable-XmlOutput, Disable-XmlOutput, Set-JsonFileLocation, Enable-JsonOutput, Disable-JsonOutput, Convert-ToJson, Invoke-WinSAT, Invoke-FullWinSAT, Invoke-WinSATDiskTest, Invoke-WinSATCpuTest, Invoke-WinSATMemoryTest, Invoke-WinSATGraphicsTest, Get-WinSATResults
