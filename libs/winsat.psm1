@@ -13,9 +13,9 @@
         - 1: General error
 #>
 
-$global:xmlFilePath = "C:\winsat.xml"
+$global:xmlFilePath = "$env:TEMP\winsat.xml"
 $global:saveAsXml = $true
-$global:jsonFilePath = "C:\winsat.json"
+$global:jsonFilePath = "$env:TEMP\winsat.json"
 $global:saveAsJson = $false
 
 function Set-XmlFileLocation {

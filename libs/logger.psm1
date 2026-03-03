@@ -15,7 +15,7 @@
 
 $global:logLevel = "info"
 $global:logFileEnabled = $false
-$global:logFilePath = "$PSScriptRoot\logs\log.txt"
+$global:logFilePath = "$env:TEMP\powershell-libs.log"
 $global:logLevelValues = @{
     "debug" = 0
     "info" = 1
