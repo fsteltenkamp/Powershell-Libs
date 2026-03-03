@@ -91,3 +91,5 @@ function Update-Libs {
 
     Write-Host "╚═══════════════════════════════════════════════════════════════════════╝"
 }
+
+Export-ModuleMember -Function Update-Libs
