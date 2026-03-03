@@ -78,6 +78,16 @@ function log {
     if ($logLevelValues[$Level] -ge $logLevelValues[$global:logLevel]) {
         Write-Host "[$timestamp] [$Level] $Message"
         if ($global:logFileEnabled) {
+            # create logfile path if it doesn't exist
+            $logDir = Split-Path -Path $global:logFilePath -Parent
+            if (-not (Test-Path -Path $logDir)) {
+                New-Item -Path $logDir -ItemType Directory -Force | Out-Null
+            }
+            # create logfile if it doesn't exist
+            if (-not (Test-Path -Path $global:logFilePath)) {
+                New-Item -Path $global:logFilePath -ItemType File -Force | Out-Null
+            }
+            # append log entry to file
             $logEntry = "[$timestamp] [$Level] $Message`n"
             Add-Content -Path $global:logFilePath -Value $logEntry
         }
