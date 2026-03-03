@@ -78,9 +78,9 @@ function Update-Libs {
                 Write-Host "| Error downloading ${lib}: ${_}"
             }
         }
-        # Import the library:
+        # Import the library into the global session scope so the caller can use it:
         try {
-            Import-Module $libPath -Force
+            Import-Module $libPath -Force -Global
             Write-Host "| ${lib} imported successfully."
         } catch {
             Write-Host "| Error importing ${lib}: ${_}"
