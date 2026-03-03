@@ -198,4 +198,4 @@ function Get-WinSATResults {
     }
 }
 
-Export-ModuleMember -Function Set-XmlFileLocation, Enable-XmlOutput, Disable-XmlOutput, Set-JsonFileLocation, Enable-JsonOutput, Disable-JsonOutput, Convert-ToJson, Run-WinSAT, Run-FullWinSAT, Get-WinSATResults
+Export-ModuleMember -Function Set-XmlFileLocation, Enable-XmlOutput, Disable-XmlOutput, Set-JsonFileLocation, Enable-JsonOutput, Disable-JsonOutput, Convert-ToJson, Run-WinSAT, Run-WinSATDiskTest, Run-FullWinSAT, Get-WinSATResults
