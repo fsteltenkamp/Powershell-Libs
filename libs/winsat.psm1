@@ -105,7 +105,7 @@ function Convert-ToJson {
     }
 }
 
-function Run-WinSAT {
+function Invoke-WinSAT {
     <#
     .SYNOPSIS
         Runs the WinSAT assessment with specified arguments.
@@ -130,7 +130,7 @@ function Run-WinSAT {
     }
 }
 
-function Run-FullWinSAT {
+function Invoke-FullWinSAT {
     <#
     .SYNOPSIS
         Runs the full WinSAT assessment.
@@ -139,10 +139,10 @@ function Run-FullWinSAT {
     if ($global:saveAsXml) {
         $winSatArgs += " -xml $global:xmlFilePath"
     }
-    Run-WinSAT -Arguments $winSatArgs
+    Invoke-WinSAT -Arguments $winSatArgs
 }
 
-function Run-WinSATDiskTest {
+function Invoke-WinSATDiskTest {
     <#
     .SYNOPSIS
         Runs the WinSAT disk performance test.
@@ -159,7 +159,7 @@ function Run-WinSATDiskTest {
     if ($null -ne $DriveLetter) {
         $winSatArgs += " -drive $DriveLetter"
     }
-    Run-WinSAT -Arguments $winSatArgs
+    Invoke-WinSAT -Arguments $winSatArgs
 }
 
 function Get-WinSATResults {
@@ -198,4 +198,4 @@ function Get-WinSATResults {
     }
 }
 
-Export-ModuleMember -Function Set-XmlFileLocation, Enable-XmlOutput, Disable-XmlOutput, Set-JsonFileLocation, Enable-JsonOutput, Disable-JsonOutput, Convert-ToJson, Run-WinSAT, Run-WinSATDiskTest, Run-FullWinSAT, Get-WinSATResults
+Export-ModuleMember -Function Set-XmlFileLocation, Enable-XmlOutput, Disable-XmlOutput, Set-JsonFileLocation, Enable-JsonOutput, Disable-JsonOutput, Convert-ToJson, Invoke-WinSAT, Invoke-WinSATDiskTest, Invoke-FullWinSAT, Get-WinSATResults

@@ -87,7 +87,7 @@ try {
 # winsat library test:
 try {
     Enable-JsonOutput
-    Run-WinSATDiskTest -DriveLetter "C"
+    Invoke-WinSATDiskTest -DriveLetter "C"
     $winsatResults = Get-WinSATResults -Format "json"
     if ($null -eq $winsatResults) {
         throw "Failed to retrieve WinSAT results."
