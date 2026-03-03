@@ -84,4 +84,4 @@ function log {
     }
 }
 
-Export-ModuleMember -Function log
+Export-ModuleMember -Function setLogLevel, enableLogfile, log
