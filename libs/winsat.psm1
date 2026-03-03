@@ -171,11 +171,9 @@ function Invoke-WinSATDiskTest {
     # Determine the type of disk test based on the parameters:
     if ($ReadOnly.IsPresent -and -not $WriteOnly.IsPresent) {$winSatArgs += "-read "}
     elseif ($WriteOnly.IsPresent -and -not $ReadOnly.IsPresent) {$winSatArgs += "-write "}
-    else {$winSatArgs += "-read -write "}
     # Determine the type of disk test based on the parameters:
     if ($Sequential.IsPresent -and -not $Random.IsPresent) {$winSatArgs += "-seq "}
     elseif ($Random.IsPresent -and -not $Sequential.IsPresent) {$winSatArgs += "-rand "}
-    else {$winSatArgs += "-seq -rand "}
     # If a drive letter is provided, add it to the arguments:
     if ($null -ne $DriveLetter) {$winSatArgs += "-drive $DriveLetter"}
     Invoke-WinSAT -Arguments $winSatArgs
