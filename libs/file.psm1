@@ -29,6 +29,7 @@ function New-Folder {
     }
     catch {
         log "error" -Message "Unable to create directory '$Path'. Error was: $_"
+        throw
     }
     log "success" "Successfully created directory '$Path'."
 }
