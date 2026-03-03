@@ -39,14 +39,14 @@ try {
 
 # file library test:
 try {
-    $testFilePath = "$PSScriptRoot\testfile.txt"
-    New-Item -Path $testFilePath -ItemType File -Force | Out-Null
+    $testFilePath = "$PSScriptRoot\testfolder"
+    Confirm-Folder -Path $testFilePath
     if (-not (Test-Path -Path $testFilePath)) {
-        throw "Failed to create test file."
+        throw "Failed to create test folder."
     }
-    Write-Host "File creation test for file library is working."
+    Write-Host "Folder creation test for file library is working."
 } catch {
-    Write-Host "Error: File creation test for file library is not working."
+    Write-Host "Error: Folder creation test for file library is not working."
 }
 
 # http library test:
