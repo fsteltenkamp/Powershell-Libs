@@ -41,10 +41,10 @@ function Update-Libs {
     # Loop through the specified libraries, update and import them:
     foreach ($lib in $Libs) {
         Write-Host "Processing library: ${lib}"
-        $libPath = "${libsPath}\${lib}.ps1"
+        $libPath = "${libsPath}\${lib}.psm1"
         Write-Host "Library path: ${libPath}"
         # Update it:
-        $updateUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/libs/${lib}.ps1"
+        $updateUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/libs/${lib}.psm1"
         $verUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/versions/${lib}.version"
         # Get the latest version number from the repository:
         try {
@@ -78,7 +78,7 @@ function Update-Libs {
         }
         # Import the library:
         try {
-            . $libPath
+            Import-Module $libPath -Force
             Write-Host "${lib} imported successfully."
         } catch {
             Write-Host "Error importing ${lib}: ${_}"

@@ -19,6 +19,6 @@ $libs = @("file", "crypt")
 $updaterUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/updater.ps1"
 $updaterPath = "$PSScriptRoot\updater.ps1"
 Invoke-WebRequest -Uri $updaterUrl -OutFile $updaterPath -UseBasicParsing
-. $updaterPath
+Import-Module $updaterPath -Force
 # Run the update function:
 Update-Libs -Libs $libs
