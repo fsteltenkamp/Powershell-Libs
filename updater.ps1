@@ -56,7 +56,7 @@ function Update-Libs {
         # Check if the library file exists locally:
         if (Test-Path -Path $libPath) {
             # If it exists, read the local version number:
-            $localVersion = Get-Content -Path $libPath -Raw | Select-String -Pattern '# Version : (\d+\.\d+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+            $localVersion = Get-Content -Path $libPath -Raw | Select-String -Pattern 'Version : (\d+\.\d+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
             if ($localVersion -ne $latestVersion) {
                 Write-Host "Updating ${lib} from version ${localVersion} to ${latestVersion}..."
                 try {
