@@ -16,8 +16,8 @@
 # Define libraries to import:
 $libs = @("crypt", "file", "http", "logger", "util", "winsat")
 # Download and import the Updater Script:
-$updaterUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/updater.ps1"
-$updaterPath = "$PSScriptRoot\updater.ps1"
+$updaterUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/updater.psm1"
+$updaterPath = "$PSScriptRoot\updater.psm1"
 Invoke-WebRequest -Uri $updaterUrl -OutFile $updaterPath -UseBasicParsing
 Import-Module $updaterPath -Force
 # Run the update function:
