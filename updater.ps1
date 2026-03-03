@@ -29,24 +29,24 @@ function Update-Libs {
         New-Item -ItemType Directory -Path $libsPath
     }
 
-    Write-Host "╔═══════════════════════════════════════════════════════════════════════╗"
-    Write-Host "║                     Updating and Importing Libraries                  ║"
-    Write-Host "╠═══════════════════════════════════════════════════════════════════════╣"
+    Write-Host "+-----------------------------------------------------------------------+"
+    Write-Host "|                     Updating and Importing Libraries                  |"
+    Write-Host "+-----------------------------------------------------------------------+"
     
     # Get which libraries should be imported:
     if ($Libs.Count -eq 0) {
         # If no libraries are specified, quit.
-        Write-Host "║ No libraries specified for import. Exiting."
+        Write-Host "| No libraries specified for import. Exiting."
         exit 0
     } else {
-        Write-Host "║ Libraries specified for import: $($Libs -join ', ')"
+        Write-Host "| Libraries specified for import: $($Libs -join ', ')"
     }
 
     # Loop through the specified libraries, update and import them:
     foreach ($lib in $Libs) {
-        Write-Host "╠═══════ Processing library: ${lib}"
+        Write-Host "+-------- Processing library: ${lib}"
         $libPath = "${libsPath}\${lib}.psm1"
-        Write-Host "║ Library path: ${libPath}"
+        Write-Host "| Library path: ${libPath}"
         # Update it:
         $updateUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/libs/${lib}.psm1"
         $verUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/versions/${lib}.version"
@@ -54,7 +54,7 @@ function Update-Libs {
         try {
             $latestVersion = (Invoke-WebRequest -Uri $verUrl -UseBasicParsing).Content.Trim()
         } catch {
-            Write-Host "║ Error fetching version for $lib."
+            Write-Host "| Error fetching version for $lib."
             continue
         }
         # Check if the library file exists locally:
@@ -62,34 +62,34 @@ function Update-Libs {
             # If it exists, read the local version number:
             $localVersion = Get-Content -Path $libPath -Raw | Select-String -Pattern 'Version : (\d+\.\d+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
             if ($localVersion -ne $latestVersion) {
-                Write-Host "║ Updating ${lib} from version ${localVersion} to ${latestVersion}..."
+                Write-Host "| Updating ${lib} from version ${localVersion} to ${latestVersion}..."
                 try {
                     Invoke-WebRequest -Uri $updateUrl -OutFile $libPath -UseBasicParsing
                 } catch {
-                    Write-Host "║ Error updating ${lib}: ${_}"
+                    Write-Host "| Error updating ${lib}: ${_}"
                 }
             } else {
-                Write-Host "║ $lib is already up to date (version ${localVersion})."
+                Write-Host "| $lib is already up to date (version ${localVersion})."
             }
         } else {
             # If it doesn't exist, download it:
-            Write-Host "║ Downloading ${lib} version ${latestVersion}..."
+            Write-Host "| Downloading ${lib} version ${latestVersion}..."
             try {
                 Invoke-WebRequest -Uri $updateUrl -OutFile $libPath -UseBasicParsing
             } catch {
-                Write-Host "║ Error downloading ${lib}: ${_}"
+                Write-Host "| Error downloading ${lib}: ${_}"
             }
         }
         # Import the library:
         try {
             Import-Module $libPath -Force
-            Write-Host "║ ${lib} imported successfully."
+            Write-Host "| ${lib} imported successfully."
         } catch {
-            Write-Host "║ Error importing ${lib}: ${_}"
+            Write-Host "| Error importing ${lib}: ${_}"
         }
     }
 
-    Write-Host "╚═══════════════════════════════════════════════════════════════════════╝"
+    Write-Host "+-----------------------------------------------------------------------+"
 }
 
 Export-ModuleMember -Function Update-Libs
