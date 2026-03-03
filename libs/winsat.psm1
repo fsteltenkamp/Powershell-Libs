@@ -177,7 +177,7 @@ function Invoke-WinSATDiskTest {
     elseif ($Random.IsPresent -and -not $Sequential.IsPresent) {$winSatArgs += "-rand "}
     else {$winSatArgs += "-seq -rand "}
     # If a drive letter is provided, add it to the arguments:
-    if ($null -ne $DriveLetter) {$winSatArgs += " -drive $DriveLetter"}
+    if ($null -ne $DriveLetter) {$winSatArgs += "-drive $DriveLetter"}
     Invoke-WinSAT -Arguments $winSatArgs
 }
 
