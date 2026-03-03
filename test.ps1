@@ -14,7 +14,7 @@
 #>
 
 # Define libraries to import:
-$libs = @("file", "crypt")
+$libs = @("file", "crypt", "util", "http")
 # Download and import the Updater Script:
 $updaterUrl = "https://raw.githubusercontent.com/fsteltenkamp/powershell-libs/main/updater.ps1"
 $updaterPath = "$PSScriptRoot\updater.ps1"
@@ -22,3 +22,51 @@ Invoke-WebRequest -Uri $updaterUrl -OutFile $updaterPath -UseBasicParsing
 Import-Module $updaterPath -Force
 # Run the update function:
 Update-Libs -Libs $libs
+
+# Test if the libraries were imported successfully by calling a function from each library:
+
+# crypt library test:
+try {
+    Get-StringHash -String "Test String"
+    $validateHash = "bd08ba3c982eaad768602536fb8e1184"
+    if ((Get-StringHash -String "Test String").Replace("-", "") -ne $validateHash) {
+        throw "Hash does not match expected value."
+    }
+    Write-Host "Get-StringHash function from crypt library is working."
+} catch {
+    Write-Host "Error: Get-StringHash function from crypt library is not working."
+}
+
+# util library test:
+try {
+    $publicIp = Get-PublicIp
+    if ($null -eq $publicIp.ipv4) {
+        throw "Failed to retrieve public IPv4 address."
+    }
+    Write-Host "Get-PublicIp function from util library is working. Public IPv4: $($publicIp.ipv4)"
+} catch {
+    Write-Host "Error: Get-PublicIp function from util library is not working."
+}
+
+# file library test:
+try {
+    $testFilePath = "$PSScriptRoot\testfile.txt"
+    New-Item -Path $testFilePath -ItemType File -Force | Out-Null
+    if (-not (Test-Path -Path $testFilePath)) {
+        throw "Failed to create test file."
+    }
+    Write-Host "File creation test for file library is working."
+} catch {
+    Write-Host "Error: File creation test for file library is not working."
+}
+
+# http library test:
+try {
+    $headers = New-RequestHeaders -UseAuth $false
+    if ($null -eq $headers.raw) {
+        throw "Failed to create request headers."
+    }
+    Write-Host "New-RequestHeaders function from http library is working. Headers: $($headers.raw | Format-List)"
+} catch {
+    Write-Host "Error: New-RequestHeaders function from http library is not working."
+}
