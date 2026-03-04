@@ -233,14 +233,13 @@ function Get-WinSATResults {
         Each leaf value is returned as @{ value = "..."; tags = @{ attr = "..." } }.
         Duplicate XML siblings (e.g. multiple AvgThroughput entries) are grouped into arrays.
     .PARAMETER Section
-        Optional. Return only a specific section ("ProgramInfo", "SystemEnvironment",
-        "WinSPR", or "Metrics"). If omitted, all sections are returned.
+        Optional. Return only a specific section or subsection using a path (e.g., "Metrics/DiskMetrics").
+        If omitted, all sections are returned.
     .PARAMETER Format
         Output format: "object" (default) returns a PowerShell ordered hashtable,
         "json" returns a JSON string.
     #>
     param(
-        [ValidateSet("ProgramInfo", "SystemEnvironment", "WinSPR", "Metrics")]
         [string]$Section = $null,
         [ValidateSet("object", "json")]
         [string]$Format = "object"
@@ -267,21 +266,26 @@ function Get-WinSATResults {
             }
         }
 
-        # Filter to a single section if requested
+        # Filter to a specific path if requested
         if ($Section) {
-            if ($results.Contains($Section)) {
-                $output = $results[$Section]
-            } else {
-                Write-Host "Section '$Section' not found in WinSAT results."
-                return $null
+            $pathParts = $Section -split '/'
+            $current = $results
+            foreach ($part in $pathParts) {
+                if ($current.Contains($part)) {
+                    $current = $current[$part]
+                } else {
+                    Write-Host "Section '$Section' not found in WinSAT results."
+                    return $null
+                }
             }
+            $output = $current
         } else {
             $output = $results
         }
 
         # Return in the requested format
         if ($Format -eq "json") {
-            return ($output | ConvertTo-Json -Depth 10)
+            return ($output | ConvertTo-Json -Depth 10 -Compress)
         }
         return $output
     } catch {
