@@ -43,6 +43,22 @@ function setLogLevel {
     }
 }
 
+function checkCreateLogfile {
+    <#
+    .SYNOPSIS
+        Checks if the log file exists and creates it if it doesn't.
+    #>
+    if ($script:logFileEnabled) {
+        $logDir = Split-Path -Path $script:logFilePath -Parent
+        if (-not (Test-Path -Path $logDir)) {
+            New-Item -Path $logDir -ItemType Directory -Force | Out-Null
+        }
+        if (-not (Test-Path -Path $script:logFilePath)) {
+            New-Item -Path $script:logFilePath -ItemType File -Force | Out-Null
+        }
+    }
+}
+
 function enableLogfile {
     <#
     .SYNOPSIS
@@ -57,6 +73,7 @@ function enableLogfile {
     $script:logFileEnabled = $true
     $script:logFilePath = $FilePath
     Write-Host "Logging to file enabled at '$FilePath'."
+    checkCreateLogfile
 }
 
 function log {
@@ -78,15 +95,7 @@ function log {
     if ($script:logLevelValues[$Level] -ge $script:logLevelValues[$script:logLevel]) {
         Write-Host "[$timestamp] [$Level] $Message"
         if ($script:logFileEnabled) {
-            # create logfile path if it doesn't exist
-            $logDir = Split-Path -Path $script:logFilePath -Parent
-            if (-not (Test-Path -Path $logDir)) {
-                New-Item -Path $logDir -ItemType Directory -Force | Out-Null
-            }
-            # create logfile if it doesn't exist
-            if (-not (Test-Path -Path $script:logFilePath)) {
-                New-Item -Path $script:logFilePath -ItemType File -Force | Out-Null
-            }
+            checkCreateLogfile
             # append log entry to file
             $logEntry = "[$timestamp] [$Level] $Message`n"
             Add-Content -Path $script:logFilePath -Value $logEntry
