@@ -86,7 +86,7 @@ function log {
         The message to log.
     #>
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position = 0)]
         [string]$Level,
         [Parameter(Mandatory, Position = 1)]
         [string]$Message
