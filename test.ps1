@@ -92,8 +92,9 @@ try {
         throw "Failed to retrieve WinSAT results."
     }
     Write-Host "Get-WinSATResults function from winsat library is working."
-    # Display available metric names:
-    Write-Host "Available metrics: $($winsatResults.ChildNodes.Name -join ', ')"
+    # display results in json format:
+    $winsatResultsJson = $winsatResults | ConvertTo-Json -Depth 5
+    Write-Host "WinSAT Results: $winsatResultsJson"
 } catch {
     Write-Host "Error: Get-WinSATResults function from winsat library is not working."
 }
