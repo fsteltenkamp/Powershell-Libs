@@ -89,7 +89,7 @@ function Invoke-WinSATDiskTest {
         [switch]$Sequential,
         [switch]$Random
     )
-    $winSatArgs = "disk -v"
+    $winSatArgs = "disk -v "
     # Determine the type of disk test based on the parameters:
     if ($ReadOnly.IsPresent -and -not $WriteOnly.IsPresent) {$winSatArgs += "-read "}
     elseif ($WriteOnly.IsPresent -and -not $ReadOnly.IsPresent) {$winSatArgs += "-write "}
@@ -115,10 +115,10 @@ function Invoke-WinSATCpuTest {
         [switch]$Encryption,
         [switch]$Compression
     )
-    $winSatArgs = "cpu -v"
-    if ($Encryption.IsPresent)  { $winSatArgs += " -encryption" }
-    if ($Compression.IsPresent) { $winSatArgs += " -compression" }
-    $winSatArgs += " -xml $script:xmlFilePath"
+    $winSatArgs = "cpu -v "
+    if ($Encryption.IsPresent)  { $winSatArgs += "-encryption " }
+    if ($Compression.IsPresent) { $winSatArgs += "-compression " }
+    $winSatArgs += "-xml $script:xmlFilePath"
     Invoke-WinSAT -Arguments $winSatArgs
 }
 
