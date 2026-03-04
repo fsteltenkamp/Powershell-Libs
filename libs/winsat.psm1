@@ -13,10 +13,10 @@
         - 1: General error
 #>
 
-$global:xmlFilePath = "$env:TEMP\winsat.xml"
-$global:saveAsXml = $true
-$global:jsonFilePath = "$env:TEMP\winsat.json"
-$global:saveAsJson = $false
+$script:xmlFilePath = "$env:TEMP\winsat.xml"
+$script:saveAsXml = $true
+$script:jsonFilePath = "$env:TEMP\winsat.json"
+$script:saveAsJson = $false
 
 function Set-XmlFileLocation {
     <#
@@ -29,7 +29,7 @@ function Set-XmlFileLocation {
         [Parameter(Mandatory)]
         [string]$Path
     )
-    $global:xmlFilePath = $Path
+    $script:xmlFilePath = $Path
     Write-Host "WinSAT XML file location set to '$Path'."
 }
 
@@ -38,7 +38,7 @@ function Enable-XmlOutput {
     .SYNOPSIS
         Enables saving WinSAT results as XML.
     #>
-    $global:saveAsXml = $true
+    $script:saveAsXml = $true
     Write-Host "WinSAT XML output enabled."
 }
 
@@ -47,7 +47,7 @@ function Disable-XmlOutput {
     .SYNOPSIS
         Disables saving WinSAT results as XML.
     #>
-    $global:saveAsXml = $false
+    $script:saveAsXml = $false
     Write-Host "WinSAT XML output disabled."
 }
 
@@ -62,7 +62,7 @@ function Set-JsonFileLocation {
         [Parameter(Mandatory)]
         [string]$Path
     )
-    $global:jsonFilePath = $Path
+    $script:jsonFilePath = $Path
     Write-Host "WinSAT JSON file location set to '$Path'."
 }
 
@@ -71,9 +71,9 @@ function Enable-JsonOutput {
     .SYNOPSIS
         Enables saving WinSAT results as JSON.
     #>
-    $global:saveAsJson = $true
+    $script:saveAsJson = $true
     # due to winsat not supporting JSON output natively, we will convert the XML output to JSON after the assessment is completed
-    $global:saveAsXml = $true # ensure XML output is enabled to have the source data for JSON conversion
+    $script:saveAsXml = $true # ensure XML output is enabled to have the source data for JSON conversion
     Write-Host "WinSAT JSON output enabled."
 }
 
@@ -82,7 +82,7 @@ function Disable-JsonOutput {
     .SYNOPSIS
         Disables saving WinSAT results as JSON.
     #>
-    $global:saveAsJson = $false
+    $script:saveAsJson = $false
     Write-Host "WinSAT JSON output disabled."
 }
 
@@ -91,17 +91,17 @@ function Convert-ToJson {
     .SYNOPSIS
         Converts the WinSAT XML results to JSON format.
     #>
-    if (Test-Path -Path $global:xmlFilePath) {
+    if (Test-Path -Path $script:xmlFilePath) {
         try {
-            $xmlContent = Get-Content -Path $global:xmlFilePath
+            $xmlContent = Get-Content -Path $script:xmlFilePath
             $jsonContent = $xmlContent | ConvertTo-Json
-            Set-Content -Path $global:jsonFilePath -Value $jsonContent
-            Write-Host "WinSAT results converted to JSON and saved to '$global:jsonFilePath'."
+            Set-Content -Path $script:jsonFilePath -Value $jsonContent
+            Write-Host "WinSAT results converted to JSON and saved to '$script:jsonFilePath'."
         } catch {
             Write-Host "An error occurred while converting WinSAT XML to JSON: $_"
         }
     } else {
-        Write-Host "WinSAT XML file not found at '$global:xmlFilePath'. Cannot convert to JSON."
+        Write-Host "WinSAT XML file not found at '$script:xmlFilePath'. Cannot convert to JSON."
     }
 }
 
@@ -136,8 +136,8 @@ function Invoke-FullWinSAT {
         Runs the full WinSAT assessment.
     #>
     $winSatArgs = "formal -restart clean -v"
-    if ($global:saveAsXml) {
-        $winSatArgs += " -xml $global:xmlFilePath"
+    if ($script:saveAsXml) {
+        $winSatArgs += " -xml $script:xmlFilePath"
     }
     Invoke-WinSAT -Arguments $winSatArgs
 }
@@ -175,7 +175,8 @@ function Invoke-WinSATDiskTest {
     if ($Sequential.IsPresent -and -not $Random.IsPresent) {$winSatArgs += "-seq "}
     elseif ($Random.IsPresent -and -not $Sequential.IsPresent) {$winSatArgs += "-rand "}
     # If a drive letter is provided, add it to the arguments:
-    if ($null -ne $DriveLetter) {$winSatArgs += "-drive $DriveLetter"}
+    if ($null -ne $DriveLetter) {$winSatArgs += "-drive $DriveLetter "}
+    if ($script:saveAsXml) {$winSatArgs += "-xml $script:xmlFilePath"}
     Invoke-WinSAT -Arguments $winSatArgs
 }
 
@@ -195,7 +196,7 @@ function Invoke-WinSATCpuTest {
     $winSatArgs = "cpu"
     if ($Encryption.IsPresent)  { $winSatArgs += " -encryption" }
     if ($Compression.IsPresent) { $winSatArgs += " -compression" }
-    if ($global:saveAsXml)      { $winSatArgs += " -xml $global:xmlFilePath" }
+    if ($script:saveAsXml)      { $winSatArgs += " -xml $script:xmlFilePath" }
     Invoke-WinSAT -Arguments $winSatArgs
 }
 
@@ -205,7 +206,7 @@ function Invoke-WinSATMemoryTest {
         Runs the WinSAT memory (RAM) bandwidth test.
     #>
     $winSatArgs = "mem"
-    if ($global:saveAsXml) { $winSatArgs += " -xml $global:xmlFilePath" }
+    if ($script:saveAsXml) { $winSatArgs += " -xml $script:xmlFilePath" }
     Invoke-WinSAT -Arguments $winSatArgs
 }
 
@@ -229,7 +230,7 @@ function Invoke-WinSATGraphicsTest {
         [switch]$DirectX10
     )
     $dxFlag = if ($DirectX10.IsPresent) { "-dx10" } else { "-dx9" }
-    $xmlArg = if ($global:saveAsXml) { " -xml $global:xmlFilePath" } else { "" }
+    $xmlArg = if ($script:saveAsXml) { " -xml $script:xmlFilePath" } else { "" }
 
     if ($D3DOnly.IsPresent) {
         Invoke-WinSAT -Arguments "d3d $dxFlag$xmlArg"
@@ -255,23 +256,23 @@ function Get-WinSATResults {
     )
     if ($Format -eq "xml") {
         # return content of the xml file if it exists, otherwise log an error and return null
-        if (Test-Path -Path $global:xmlFilePath) {
+        if (Test-Path -Path $script:xmlFilePath) {
             # return content of the xml file
-            return Get-Content -Path $global:xmlFilePath
+            return Get-Content -Path $script:xmlFilePath
         } else {
-            Write-Host "WinSAT XML file not found at '$global:xmlFilePath'."
+            Write-Host "WinSAT XML file not found at '$script:xmlFilePath'."
             return $null
         }
     } elseif ($Format -eq "json") {
         # convert xml to json, save it in the file, remove the xml file.
         Convert-ToJson
-        if (Test-Path -Path $global:jsonFilePath) {
+        if (Test-Path -Path $script:jsonFilePath) {
             # remove xml file:
-            Remove-Item -Path $global:xmlFilePath -ErrorAction SilentlyContinue
+            Remove-Item -Path $script:xmlFilePath -ErrorAction SilentlyContinue
             # return content of the json file
-            return Get-Content -Path $global:jsonFilePath
+            return Get-Content -Path $script:jsonFilePath
         } else {
-            Write-Host "WinSAT JSON file not found at '$global:jsonFilePath'."
+            Write-Host "WinSAT JSON file not found at '$script:jsonFilePath'."
             return $null
         }
     }

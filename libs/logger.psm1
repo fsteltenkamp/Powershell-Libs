@@ -13,10 +13,10 @@
         - 1: General error
 #>
 
-$global:logLevel = "info"
-$global:logFileEnabled = $false
-$global:logFilePath = "$env:TEMP\powershell-libs.log"
-$global:logLevelValues = @{
+$script:logLevel = "info"
+$script:logFileEnabled = $false
+$script:logFilePath = "$env:TEMP\powershell-libs.log"
+$script:logLevelValues = @{
     "debug" = 0
     "info" = 1
     "warning" = 2
@@ -35,11 +35,11 @@ function setLogLevel {
         [Parameter(Mandatory)]
         [string]$Level
     )
-    if ($logLevelValues.ContainsKey($Level)) {
-        $global:logLevel = $Level
+    if ($script:logLevelValues.ContainsKey($Level)) {
+        $script:logLevel = $Level
         Write-Host "Log level set to '$Level'."
     } else {
-        Write-Host "Invalid log level '$Level'. Valid levels are: $($logLevelValues.Keys -join ", ")."
+        Write-Host "Invalid log level '$Level'. Valid levels are: $($script:logLevelValues.Keys -join ", ")."
     }
 }
 
@@ -54,8 +54,8 @@ function enableLogfile {
         [Parameter(Mandatory)]
         [string]$FilePath
     )
-    $global:logFileEnabled = $true
-    $global:logFilePath = $FilePath
+    $script:logFileEnabled = $true
+    $script:logFilePath = $FilePath
     Write-Host "Logging to file enabled at '$FilePath'."
 }
 
@@ -75,21 +75,21 @@ function log {
         [string]$Message
     )
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    if ($logLevelValues[$Level] -ge $logLevelValues[$global:logLevel]) {
+    if ($script:logLevelValues[$Level] -ge $script:logLevelValues[$script:logLevel]) {
         Write-Host "[$timestamp] [$Level] $Message"
-        if ($global:logFileEnabled) {
+        if ($script:logFileEnabled) {
             # create logfile path if it doesn't exist
-            $logDir = Split-Path -Path $global:logFilePath -Parent
+            $logDir = Split-Path -Path $script:logFilePath -Parent
             if (-not (Test-Path -Path $logDir)) {
                 New-Item -Path $logDir -ItemType Directory -Force | Out-Null
             }
             # create logfile if it doesn't exist
-            if (-not (Test-Path -Path $global:logFilePath)) {
-                New-Item -Path $global:logFilePath -ItemType File -Force | Out-Null
+            if (-not (Test-Path -Path $script:logFilePath)) {
+                New-Item -Path $script:logFilePath -ItemType File -Force | Out-Null
             }
             # append log entry to file
             $logEntry = "[$timestamp] [$Level] $Message`n"
-            Add-Content -Path $global:logFilePath -Value $logEntry
+            Add-Content -Path $script:logFilePath -Value $logEntry
         }
     }
 }
