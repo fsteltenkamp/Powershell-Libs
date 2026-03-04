@@ -307,14 +307,13 @@ function Get-ParsedDiskResults {
     $results = @()
     # walks through the structure to extract a simplified object with just the key performance numbers
     foreach ($testType in $diskMetrics) {
-        foreach ($test in $diskMetrics[$testType]) {
-            $result = [PSCustomObject]@{
+        foreach ($test in $testType) {
+            $results += [PSCustomObject]@{
                 TestType = $testType
                 TestName = $test.tags.kind
                 Value     = [double]$test.value
                 Unit      = $test.tags.units
             }
-            $results += $result
         }
     }
     return $results
