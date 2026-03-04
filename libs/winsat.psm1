@@ -89,7 +89,7 @@ function Invoke-WinSATDiskTest {
         [switch]$Sequential,
         [switch]$Random
     )
-    $winSatArgs = "disk "
+    $winSatArgs = "disk -v"
     # Determine the type of disk test based on the parameters:
     if ($ReadOnly.IsPresent -and -not $WriteOnly.IsPresent) {$winSatArgs += "-read "}
     elseif ($WriteOnly.IsPresent -and -not $ReadOnly.IsPresent) {$winSatArgs += "-write "}
@@ -115,7 +115,7 @@ function Invoke-WinSATCpuTest {
         [switch]$Encryption,
         [switch]$Compression
     )
-    $winSatArgs = "cpu"
+    $winSatArgs = "cpu -v"
     if ($Encryption.IsPresent)  { $winSatArgs += " -encryption" }
     if ($Compression.IsPresent) { $winSatArgs += " -compression" }
     $winSatArgs += " -xml $script:xmlFilePath"
@@ -127,7 +127,7 @@ function Invoke-WinSATMemoryTest {
     .SYNOPSIS
         Runs the WinSAT memory (RAM) bandwidth test.
     #>
-    $winSatArgs = "mem -xml $script:xmlFilePath"
+    $winSatArgs = "mem -v -xml $script:xmlFilePath"
     Invoke-WinSAT -Arguments $winSatArgs
 }
 
@@ -154,12 +154,12 @@ function Invoke-WinSATGraphicsTest {
     $xmlArg = " -xml $script:xmlFilePath"
 
     if ($D3DOnly.IsPresent) {
-        Invoke-WinSAT -Arguments "d3d $dxFlag$xmlArg"
+        Invoke-WinSAT -Arguments "-v d3d $dxFlag$xmlArg"
     } elseif ($DwmOnly.IsPresent) {
-        Invoke-WinSAT -Arguments "dwm$xmlArg"
+        Invoke-WinSAT -Arguments "-v dwm$xmlArg"
     } else {
-        Invoke-WinSAT -Arguments "d3d $dxFlag$xmlArg"
-        Invoke-WinSAT -Arguments "dwm$xmlArg"
+        Invoke-WinSAT -Arguments "-v d3d $dxFlag$xmlArg"
+        Invoke-WinSAT -Arguments "-v dwm$xmlArg"
     }
 }
 
