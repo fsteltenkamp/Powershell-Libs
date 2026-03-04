@@ -64,7 +64,7 @@ try {
 try {
     setLogLevel -Level "debug"
     enableLogfile -FilePath "$PSScriptRoot\testlog.txt"
-    log "info" "This is a test log message."
+    log -Level "info" -Message "This is a test log message."
     if (-not (Test-Path -Path "$PSScriptRoot\testlog.txt")) {
         throw "Failed to create log file."
     }
