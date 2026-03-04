@@ -301,7 +301,7 @@ function Get-ParsedDiskResults {
     .DESCRIPTION
         Extracts the "Metrics/DiskMetrics" section from the WinSAT results and returns a list of custom objects with the test type, test name, value, and unit for each disk performance metric.
     #>
-    
+
     # get the "Metrics/DiskMetrics" section of Get-WinSATResults output
     $diskMetrics = Get-WinSATResults -Section "Metrics/DiskMetrics"
     $results = @()
@@ -320,4 +320,4 @@ function Get-ParsedDiskResults {
     return $results
 }
 
-Export-ModuleMember -Function Set-XmlFileLocation, Invoke-WinSAT, Invoke-FullWinSAT, Invoke-WinSATDiskTest, Invoke-WinSATCpuTest, Invoke-WinSATMemoryTest, Invoke-WinSATGraphicsTest, Get-WinSATResults
+Export-ModuleMember -Function Set-XmlFileLocation, Invoke-WinSAT, Invoke-FullWinSAT, Invoke-WinSATDiskTest, Invoke-WinSATCpuTest, Invoke-WinSATMemoryTest, Invoke-WinSATGraphicsTest, Get-WinSATResults, Get-ParsedDiskResults
