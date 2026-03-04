@@ -306,8 +306,9 @@ function Get-ParsedDiskResults {
     $diskMetrics = Get-WinSATResults -Section "Metrics/DiskMetrics"
     $results = @()
     # walks through the structure to extract a simplified object with just the key performance numbers
-    foreach ($testType in $diskMetrics) {
-        foreach ($test in $testType) {
+    foreach ($testType in $diskMetrics.Keys) {
+        $type = $diskMetrics[$testType]
+        foreach ($test in $type) {
             $results += [PSCustomObject]@{
                 TestType = $testType
                 TestName = $test.tags.kind
