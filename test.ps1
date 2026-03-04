@@ -86,13 +86,14 @@ try {
 
 # winsat library test:
 try {
-    Enable-JsonOutput
     Invoke-WinSATDiskTest -DriveLetter "C"
-    $winsatResults = Get-WinSATResults -Format "json"
+    $winsatResults = Get-WinSATResults
     if ($null -eq $winsatResults) {
         throw "Failed to retrieve WinSAT results."
     }
-    Write-Host "Get-WinSATResults function from winsat library is working. Results: $($winsatResults | Format-List)"
+    Write-Host "Get-WinSATResults function from winsat library is working."
+    # Display available metric names:
+    Write-Host "Available metrics: $($winsatResults.ChildNodes.Name -join ', ')"
 } catch {
     Write-Host "Error: Get-WinSATResults function from winsat library is not working."
 }
