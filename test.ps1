@@ -92,9 +92,12 @@ try {
         throw "Failed to retrieve WinSAT results."
     }
     Write-Host "Get-WinSATResults function from winsat library is working."
-    # display results in json format:
-    $winsatResultsJson = $winsatResults | ConvertTo-Json -Depth 5
+    # Display results in JSON format:
+    $winsatResultsJson = Get-WinSATResults -Format "json"
     Write-Host "WinSAT Results: $winsatResultsJson"
+    # Display just the Metrics section:
+    $metrics = Get-WinSATResults -Section "Metrics"
+    Write-Host "WinSAT Metrics: $($metrics | ConvertTo-Json -Depth 10)"
 } catch {
     Write-Host "Error: Get-WinSATResults function from winsat library is not working."
 }

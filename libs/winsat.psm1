@@ -163,20 +163,87 @@ function Invoke-WinSATGraphicsTest {
     }
 }
 
+function ConvertFrom-XmlNode {
+    <#
+    .SYNOPSIS
+        Recursively converts an XML element into an ordered hashtable.
+    .DESCRIPTION
+        Leaf nodes become: @{ value = "innerText"; tags = @{ attr1 = "v1"; ... } }
+        Container nodes become: @{ child1 = ...; child2 = ... }
+        Duplicate sibling names (e.g. multiple AvgThroughput) are collected into arrays.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [System.Xml.XmlNode]$Node
+    )
+    $result = [ordered]@{}
+
+    foreach ($child in $Node.ChildNodes) {
+        if ($child.NodeType -ne 'Element') { continue }
+
+        # Collect attributes as tags
+        $tags = [ordered]@{}
+        foreach ($attr in $child.Attributes) {
+            $tags[$attr.Name] = $attr.Value
+        }
+
+        # Check whether this element has child elements or is a leaf
+        $childElements = @($child.ChildNodes | Where-Object { $_.NodeType -eq 'Element' })
+
+        if ($childElements.Count -gt 0) {
+            # Container node — recurse
+            $entry = ConvertFrom-XmlNode -Node $child
+        } else {
+            # Leaf node
+            $entry = [ordered]@{ "value" = $child.InnerText }
+        }
+
+        # Attach tags if any attributes exist
+        if ($tags.Count -gt 0) {
+            $entry["tags"] = $tags
+        }
+
+        # Handle duplicate sibling names by collecting into an array
+        if ($result.Contains($child.Name)) {
+            if ($result[$child.Name] -is [System.Collections.ArrayList]) {
+                $result[$child.Name].Add($entry) | Out-Null
+            } else {
+                $existing = $result[$child.Name]
+                $result[$child.Name] = [System.Collections.ArrayList]@($existing, $entry)
+            }
+        } else {
+            $result[$child.Name] = $entry
+        }
+    }
+
+    return $result
+}
+
 function Get-WinSATResults {
     <#
     .SYNOPSIS
-        Retrieves the WinSAT metrics from the XML results file.
+        Retrieves structured WinSAT results from the XML output.
     .DESCRIPTION
-        Parses the WinSAT XML output and returns the child elements of the
-        WinSAT/Metrics node (e.g. CPUMetrics, GraphicsMetrics, DiskMetrics)
-        as a PowerShell XML object.
-    .PARAMETER MetricName
-        Optional. Return only a specific metric node (e.g. "DiskMetrics", "CPUMetrics").
-        If omitted, all metrics are returned.
+        Parses the WinSAT XML and returns an ordered hashtable with four sections:
+        - ProgramInfo     : WinSAT program metadata (Name, Version, CmdLine, etc.)
+        - SystemEnvironment: System state at test time (ExecDateTOD, IsOfficial, etc.)
+        - WinSPR          : Windows System Performance Rating scores
+        - Metrics         : Actual benchmark results (CpuMetrics, DiskMetrics, etc.)
+
+        Each leaf value is returned as @{ value = "..."; tags = @{ attr = "..." } }.
+        Duplicate XML siblings (e.g. multiple AvgThroughput entries) are grouped into arrays.
+    .PARAMETER Section
+        Optional. Return only a specific section ("ProgramInfo", "SystemEnvironment",
+        "WinSPR", or "Metrics"). If omitted, all sections are returned.
+    .PARAMETER Format
+        Output format: "object" (default) returns a PowerShell ordered hashtable,
+        "json" returns a JSON string.
     #>
     param(
-        [string]$MetricName = $null
+        [ValidateSet("ProgramInfo", "SystemEnvironment", "WinSPR", "Metrics")]
+        [string]$Section = $null,
+        [ValidateSet("object", "json")]
+        [string]$Format = "object"
     )
     if (-not (Test-Path -Path $script:xmlFilePath)) {
         Write-Host "WinSAT XML file not found at '$script:xmlFilePath'."
@@ -184,15 +251,39 @@ function Get-WinSATResults {
     }
     try {
         [xml]$xmlContent = Get-Content -Path $script:xmlFilePath
-        $metrics = $xmlContent.WinSAT.Metrics
-        if ($null -eq $metrics) {
-            Write-Host "No Metrics node found in WinSAT XML."
+        $winsat = $xmlContent.WinSAT
+        if ($null -eq $winsat) {
+            Write-Host "No WinSAT root node found in XML."
             return $null
         }
-        if ($MetricName) {
-            return $metrics.$MetricName
+
+        $results = [ordered]@{}
+
+        # Parse each section if it exists
+        $sections = @("ProgramInfo", "SystemEnvironment", "WinSPR", "Metrics")
+        foreach ($s in $sections) {
+            if ($winsat.$s) {
+                $results[$s] = ConvertFrom-XmlNode -Node $winsat.$s
+            }
         }
-        return $metrics
+
+        # Filter to a single section if requested
+        if ($Section) {
+            if ($results.Contains($Section)) {
+                $output = $results[$Section]
+            } else {
+                Write-Host "Section '$Section' not found in WinSAT results."
+                return $null
+            }
+        } else {
+            $output = $results
+        }
+
+        # Return in the requested format
+        if ($Format -eq "json") {
+            return ($output | ConvertTo-Json -Depth 10)
+        }
+        return $output
     } catch {
         Write-Host "Error parsing WinSAT XML: $_"
         return $null
