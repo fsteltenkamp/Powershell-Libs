@@ -294,4 +294,30 @@ function Get-WinSATResults {
     }
 }
 
+function Get-ParsedDiskResults {
+    <#
+    .SYNOPSIS
+        Retrieves a simplified list of disk performance results from the WinSAT XML.
+    .DESCRIPTION
+        Extracts the "Metrics/DiskMetrics" section from the WinSAT results and returns a list of custom objects with the test type, test name, value, and unit for each disk performance metric.
+    #>
+    
+    # get the "Metrics/DiskMetrics" section of Get-WinSATResults output
+    $diskMetrics = Get-WinSATResults -Section "Metrics/DiskMetrics"
+    $results = @()
+    # walks through the structure to extract a simplified object with just the key performance numbers
+    foreach ($testType in $diskMetrics) {
+        foreach ($test in $diskMetrics[$testType]) {
+            $result = [PSCustomObject]@{
+                TestType = $testType
+                TestName = $test.tags.kind
+                Value     = [double]$test.value
+                Unit      = $test.tags.units
+            }
+            $results += $result
+        }
+    }
+    return $results
+}
+
 Export-ModuleMember -Function Set-XmlFileLocation, Invoke-WinSAT, Invoke-FullWinSAT, Invoke-WinSATDiskTest, Invoke-WinSATCpuTest, Invoke-WinSATMemoryTest, Invoke-WinSATGraphicsTest, Get-WinSATResults
