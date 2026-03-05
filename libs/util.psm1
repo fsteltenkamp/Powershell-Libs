@@ -7,7 +7,7 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.0
+        Version : 1.1
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Exitcodes:
         - 1: General error
@@ -43,4 +43,13 @@ function Get-Hostname {
     return $env:COMPUTERNAME
 }
 
-Export-ModuleMember -Function Get-PublicIp, Get-Hostname
+function Get-UnixTimestamp {
+    <#
+    .SYNOPSIS
+        Returns the current Unix timestamp.
+    #>
+    $ts = [int64](([datetime]::UtcNow)-(get-date "1/1/1970")).TotalSeconds
+    return $ts
+}
+
+Export-ModuleMember -Function Get-PublicIp, Get-Hostname, Get-UnixTimestamp
