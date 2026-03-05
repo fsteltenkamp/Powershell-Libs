@@ -7,7 +7,7 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.0
+        Version : 1.1
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Exitcodes:
         - 1: General error
@@ -24,7 +24,7 @@ $script:logLevelValues = @{
     "success" = 4
 }
 
-function setLogLevel {
+function Set-LogLevel {
     <#
     .SYNOPSIS
         Sets the global log level for the module.
@@ -43,7 +43,7 @@ function setLogLevel {
     }
 }
 
-function checkCreateLogfile {
+function Check-CreateLogfile {
     <#
     .SYNOPSIS
         Checks if the log file exists and creates it if it doesn't.
@@ -59,7 +59,7 @@ function checkCreateLogfile {
     }
 }
 
-function enableLogfile {
+function Enable-Logfile {
     <#
     .SYNOPSIS
         Enables logging to a file.
@@ -73,7 +73,7 @@ function enableLogfile {
     $script:logFileEnabled = $true
     $script:logFilePath = $FilePath
     Write-Host "Logging to file enabled at '$FilePath'."
-    checkCreateLogfile
+    Check-CreateLogfile
 }
 
 function log {
@@ -95,7 +95,7 @@ function log {
     if ($script:logLevelValues[$Level] -ge $script:logLevelValues[$script:logLevel]) {
         Write-Host "[$timestamp] [$Level] $Message"
         if ($script:logFileEnabled) {
-            checkCreateLogfile
+            Check-CreateLogfile
             # append log entry to file
             $logEntry = "[$timestamp] [$Level] $Message`n"
             Add-Content -Path $script:logFilePath -Value $logEntry
@@ -103,4 +103,4 @@ function log {
     }
 }
 
-Export-ModuleMember -Function setLogLevel, enableLogfile, log
+Export-ModuleMember -Function Set-LogLevel, Enable-Logfile, log
