@@ -19,13 +19,17 @@ function Get-VeeamBrVersion {
         Checks the installation status of Veeam Backup & Replication.
     #>
     # Get veeam version by checking the uninstall registry
-    $displayName = "^Veeam Backup & Replication"
+    $displayName = "Veeam Backup & Replication"
     $registryKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
     $registryKeyWow6432 = "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
     # get values
     $veeamInstalled = Get-ChildItem -Path $registryKey, $registryKeyWow6432 -ErrorAction SilentlyContinue |
-        Where-Object { $_.GetValue("DisplayName") -like "$displayName*" } |
-        Select-Object DisplayName, DisplayVersion, Publisher, InstallDate -First 1
+        Where-Object { $_.GetValue("DisplayName") -eq "$displayName" } |
+        Select-Object
+            @{Name="DisplayName"; Expression={$_.GetValue("DisplayName")}},
+            @{Name="DisplayVersion"; Expression={$_.GetValue("DisplayVersion")}},
+            @{Name="Publisher"; Expression={$_.GetValue("Publisher")}},
+            @{Name="InstallDate"; Expression={$_.GetValue("InstallDate")}} -First 1
     if ($veeamInstalled) {
         return $veeamInstalled.DisplayVersion
     } else {
@@ -45,8 +49,12 @@ function Get-VeeamO365Version {
     $registryKeyWow6432 = "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
     # get values
     $veeamInstalled = Get-ChildItem -Path $registryKey, $registryKeyWow6432 -ErrorAction SilentlyContinue |
-        Where-Object { $_.GetValue("DisplayName") -like "$displayName*" } |
-        Select-Object DisplayName, DisplayVersion, Publisher, InstallDate -First 1
+        Where-Object { $_.GetValue("DisplayName") -match $displayName } |
+        Select-Object
+            @{Name="DisplayName"; Expression={$_.GetValue("DisplayName")}},
+            @{Name="DisplayVersion"; Expression={$_.GetValue("DisplayVersion")}},
+            @{Name="Publisher"; Expression={$_.GetValue("Publisher")}},
+            @{Name="InstallDate"; Expression={$_.GetValue("InstallDate")}} -First 1
     if ($veeamInstalled) {
         return $veeamInstalled.DisplayVersion
     } else {
@@ -61,7 +69,7 @@ function Import-VeeamPowershellModule {
         Imports the Veeam Backup & Replication PowerShell module.
     #>
     # Depending on version of veeam BR, it is either a SnapIn or a regular module.
-    $veeamVersion = getVeeamBrVersion
+    $veeamVersion = Get-VeeamBrVersion
     if ($veeamVersion -like "10*") {
         # Veeam Backup & Replication v10 and lower use SnapIn
         if (-not (Get-PSSnapin -Name "VeeamPSSnapin" -ErrorAction SilentlyContinue)) {
@@ -138,7 +146,7 @@ function Get-FailedVbrJobs {
     .SYNOPSIS
         Retrieves a list of all jobs that have failed in Veeam Backup & Replication.
     #>
-    $jobs = getVbrJobs
+    $jobs = Get-VeeamBrJobs
     $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
     return $failedJobs
 }
@@ -148,7 +156,7 @@ function Get-FailedVboJobs {
     .SYNOPSIS
         Retrieves a list of all jobs that have failed in Veeam Backup for Microsoft 365.
     #>
-    $jobs = getVboJobs
+    $jobs = Get-VeeamO365Jobs
     $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
     return $failedJobs
 }
@@ -163,7 +171,7 @@ function Get-OldVbrJobs {
     param (
         [int]$Days = 7
     )
-    $jobs = getVbrJobs
+    $jobs = Get-VeeamBrJobs
     $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
     return $oldJobs
 }
@@ -178,7 +186,7 @@ function Get-OldVboJobs {
     param (
         [int]$Days = 7
     )
-    $jobs = getVboJobs
+    $jobs = Get-VeeamO365Jobs
     $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
     return $oldJobs
 }
