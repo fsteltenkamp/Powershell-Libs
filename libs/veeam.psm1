@@ -7,7 +7,7 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.1
+        Version : 1.2
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Exitcodes:
         - 1: General error
