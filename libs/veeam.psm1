@@ -13,7 +13,7 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-    
+
     .SYNOPSIS
         Library for checking Veeam Backup & Replication services and components.
 
@@ -22,13 +22,15 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.2
+        Version : 1.3
         Url     : https://github.com/fsteltenkamp/powershell-libs
+        Documentation:
+        - https://helpcenter.veeam.com/docs/vbr/powershell/
         Exitcodes:
         - 1: General error
 #>
 
-function Get-VeeamBrVersion {
+function Get-VeeamVersion {
     <#
     .SYNOPSIS
         Checks the installation status of Veeam Backup & Replication.
@@ -48,30 +50,6 @@ function Get-VeeamBrVersion {
         return $veeamInstalled.DisplayVersion
     } else {
         log "error" "Veeam Backup & Replication is not installed."
-        exit 1
-    }
-}
-
-function Get-VeeamO365Version {
-    <#
-    .SYNOPSIS
-        Checks the installation status of Veeam Backup for Microsoft 365.
-    #>
-    # Get veeam version by checking the uninstall registry
-    $displayName = "^Veeam.*365"
-    $registryKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
-    $registryKeyWow6432 = "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
-    # get values
-    $veeamInstalled = Get-ChildItem -Path $registryKey, $registryKeyWow6432 -ErrorAction SilentlyContinue |
-        Where-Object { $_.GetValue("DisplayName") -match $displayName } |
-        Select-Object @{Name="DisplayName"; Expression={$_.GetValue("DisplayName")}},
-            @{Name="DisplayVersion"; Expression={$_.GetValue("DisplayVersion")}},
-            @{Name="Publisher"; Expression={$_.GetValue("Publisher")}},
-            @{Name="InstallDate"; Expression={$_.GetValue("InstallDate")}} -First 1
-    if ($veeamInstalled) {
-        return $veeamInstalled.DisplayVersion
-    } else {
-        log "error" "Veeam Backup for Microsoft 365 is not installed."
         exit 1
     }
 }
@@ -112,13 +90,13 @@ function Import-VeeamPowershellModule {
     }
 }
 
-function Get-VeeamBrJobs {
+function Get-VeeamJobs {
     <#
     .SYNOPSIS
         Gets a list of all Veeam Backup & Replication backup jobs.
     #>
     try {
-        $backupJobs = Get-VBRJob -Type Backup
+        $backupJobs = Get-VBRJob
         return $backupJobs
     } catch {
         log "error" "Failed to get Veeam Backup & Replication backup jobs: $_"
@@ -126,16 +104,43 @@ function Get-VeeamBrJobs {
     }
 }
 
-function Get-VeeamO365Jobs {
+function Get-VeeamSessions {
     <#
     .SYNOPSIS
-        Gets a list of all Veeam Backup for Microsoft 365 backup jobs.
+        Gets a list of all Veeam Backup & Replication sessions and their status.
+    .PARAMETER JobName
+        Optional. The name of the job to filter sessions by.
+    .PARAMETER LastNDays
+        Optional. The number of days to look back for sessions. Default is 7.
+    .PARAMETER State
+        Optional. The state to filter sessions by. Default is "Any".
     #>
+    param (
+        [string]$JobName,
+        [int]$LastNDays = 7,
+        [string]$State = "Any"
+    )
     try {
-        $backupJobs = Get-VBOJob
-        return $backupJobs
+        $queryParameters = @{
+            CreationTime = (Get-Date).AddDays(-$LastNDays)
+        }
+        if ($State -ne "Any") {
+            $queryParameters["Result"] = $State
+        }
+        if ($JobName) {
+            $queryParameters["Job Name"] = $JobName
+        }
+        $sessions = Get-VBRBackupSession | Where-Object {
+            foreach ($key in $queryParameters.Keys) {
+                if ($_.($key) -ne $queryParameters[$key]) {
+                    return $false
+                }
+            }
+            return $true
+        }
+        return $sessions
     } catch {
-        log "error" "Failed to get Veeam Backup for Microsoft 365 backup jobs: $_"
+        log "error" "Failed to get Veeam Backup & Replication sessions: $_"
         exit 1
     }
 }
@@ -154,7 +159,7 @@ function Get-VeeamServices {
     }
 }
 
-function Get-FailedVbrJobs {
+function Get-FailedJobs {
     <#
     .SYNOPSIS
         Retrieves a list of all jobs that have failed in Veeam Backup & Replication.
@@ -169,61 +174,6 @@ function Get-FailedVbrJobs {
     }
 }
 
-function Get-FailedVboJobs {
-    <#
-    .SYNOPSIS
-        Retrieves a list of all jobs that have failed in Veeam Backup for Microsoft 365.
-    #>
-    try {
-        $jobs = Get-VeeamO365Jobs
-        $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
-        return $failedJobs
-    } catch {
-        log "error" "Failed to get failed Veeam Backup for Microsoft 365 jobs: $_"
-        exit 1
-    }
-}
-
-function Get-OldVbrJobs {
-    <#
-    .SYNOPSIS
-        Retrieves a list of all jobs that have not been run in the last specified number of days in Veeam Backup & Replication.
-    .PARAMETER Days
-        The number of days to check for old jobs. Default is 7.
-    #>
-    param (
-        [int]$Days = 7
-    )
-    try {
-        $jobs = Get-VeeamBrJobs
-        $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
-        return $oldJobs
-    } catch {
-        log "error" "Failed to get old Veeam Backup & Replication jobs: $_"
-        exit 1
-    }
-}
-
-function Get-OldVboJobs {
-    <#
-    .SYNOPSIS
-        Retrieves a list of all jobs that have not been run in the last specified number of days in Veeam Backup for Microsoft 365.
-    .PARAMETER Days
-        The number of days to check for old jobs. Default is 7.
-    #>
-    param (
-        [int]$Days = 7
-    )
-    try {
-        $jobs = Get-VeeamO365Jobs
-        $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
-        return $oldJobs
-    } catch {
-        log "error" "Failed to get old Veeam Backup for Microsoft 365 jobs: $_"
-        exit 1
-    }
-}
-
 function Get-VeeamBrRepositories {
     <#
     .SYNOPSIS
@@ -234,20 +184,6 @@ function Get-VeeamBrRepositories {
         return $repositories
     } catch {
         log "error" "Failed to get Veeam Backup & Replication repositories: $_"
-        exit 1
-    }
-}
-
-function Get-VeeamO365Repositories {
-    <#
-    .SYNOPSIS
-        Gets a list of all Veeam Backup for Microsoft 365 repositories and their status.
-    #>
-    try {
-        $repositories = Get-VBORepository
-        return $repositories
-    } catch {
-        log "error" "Failed to get Veeam Backup for Microsoft 365 repositories: $_"
         exit 1
     }
 }
