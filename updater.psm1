@@ -36,7 +36,8 @@ function Update-Libs {
     # Check if the libs folder exists
     if (-not (Test-Path -Path $libsPath)) {
         # Create the folder:
-        New-Item -ItemType Directory -Path $libsPath
+        New-Item -ItemType Directory -Path $libsPath -Force | Out-Null
+        log "| Created libs folder at ${libsPath}" -Verbose $Verbose
     }
 
     log "+-----------------------------------------------------------------------+" -Verbose $Verbose
