@@ -25,8 +25,8 @@ function log {
 
 function Update-Libs {
     param (
-        [string[]]$Libs
-        [switch]$Verbose
+        [string[]]$Libs,
+        [switch]$Verbose,
         [switch]$Force
     )
 
