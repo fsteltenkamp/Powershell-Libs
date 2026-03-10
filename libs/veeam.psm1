@@ -60,7 +60,7 @@ function Import-VeeamPowershellModule {
         Imports the Veeam Backup & Replication PowerShell module.
     #>
     # Depending on version of veeam BR, it is either a SnapIn or a regular module.
-    $veeamVersion = Get-VeeamBrVersion
+    $veeamVersion = Get-VeeamVersion
     if ($veeamVersion -like "10*") {
         # Veeam Backup & Replication v10 and lower use SnapIn
         if (-not (Get-PSSnapin -Name "VeeamPSSnapin" -ErrorAction SilentlyContinue)) {
@@ -118,25 +118,17 @@ function Get-VeeamSessions {
     param (
         [string]$JobName,
         [int]$LastNDays = 7,
+        [ValidateSet("Any", "None", "Success", "Warning", "Failed")]
         [string]$State = "Any"
     )
     try {
-        $queryParameters = @{
-            CreationTime = (Get-Date).AddDays(-$LastNDays)
+        $sessions = Get-VBRBackupSession |
+            Where-Object { $_.CreationTime -ge (Get-Date).AddDays(-$LastNDays) }
+        if ($JobName) {
+            $sessions = $sessions | Where-Object { $_.JobName -eq $JobName }
         }
         if ($State -ne "Any") {
-            $queryParameters["Result"] = $State
-        }
-        if ($JobName) {
-            $queryParameters["Job Name"] = $JobName
-        }
-        $sessions = Get-VBRBackupSession | Where-Object {
-            foreach ($key in $queryParameters.Keys) {
-                if ($_.($key) -ne $queryParameters[$key]) {
-                    return $false
-                }
-            }
-            return $true
+            $sessions = $sessions | Where-Object { $_.Result -eq $State }
         }
         return $sessions
     } catch {
@@ -165,7 +157,7 @@ function Get-FailedJobs {
         Retrieves a list of all jobs that have failed in Veeam Backup & Replication.
     #>
     try {
-        $jobs = Get-VeeamBrJobs
+        $jobs = Get-VeeamJobs
         $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
         return $failedJobs
     } catch {
@@ -188,20 +180,51 @@ function Get-VeeamBrRepositories {
     }
 }
 
+function Get-VeeamLicenseStatus {
+    <#
+    .SYNOPSIS
+        Returns details about the license installed on the Veeam Backup & Replication server.
+    .NOTES
+        Uses Get-VBRInstalledLicense.
+        Documentation: https://helpcenter.veeam.com/docs/vbr/powershell/get-vbrinstalledlicense.html
+    #>
+    try {
+        $license = Get-VBRInstalledLicense
+        return $license
+    } catch {
+        log "error" "Failed to get Veeam Backup & Replication license status: $_"
+        exit 1
+    }
+}
+
+function Get-VeeamServerInfo {
+    <#
+    .SYNOPSIS
+        Returns name, build version and patch level of the Veeam Backup & Replication server.
+    .NOTES
+        Uses Get-VBRBackupServerInfo.
+        Documentation: https://helpcenter.veeam.com/docs/vbr/powershell/get-vbrbackupserverinfo.html
+    #>
+    try {
+        $serverInfo = Get-VBRBackupServerInfo
+        return $serverInfo
+    } catch {
+        log "error" "Failed to get Veeam Backup & Replication server info: $_"
+        exit 1
+    }
+}
+
 # ---------------------------------------------------------------------------
 #  Exports
 # ---------------------------------------------------------------------------
 Export-ModuleMember -Function @(
-    "Get-VeeamBrVersion",
-    "Get-VeeamO365Version",
+    "Get-VeeamVersion",
     "Import-VeeamPowershellModule",
-    "Get-VeeamBrJobs",
-    "Get-VeeamO365Jobs",
+    "Get-VeeamJobs",
+    "Get-VeeamSessions",
     "Get-VeeamServices",
-    "Get-FailedVbrJobs",
-    "Get-FailedVboJobs",
-    "Get-OldVbrJobs",
-    "Get-OldVboJobs",
+    "Get-FailedJobs",
     "Get-VeeamBrRepositories",
-    "Get-VeeamO365Repositories"
+    "Get-VeeamLicenseStatus",
+    "Get-VeeamServerInfo"
 )
