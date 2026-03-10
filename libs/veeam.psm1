@@ -7,13 +7,13 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.0
+        Version : 1.1
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Exitcodes:
         - 1: General error
 #>
 
-function getVeeamBrVersion {
+function Get-VeeamBrVersion {
     <#
     .SYNOPSIS
         Checks the installation status of Veeam Backup & Replication.
@@ -34,7 +34,7 @@ function getVeeamBrVersion {
     }
 }
 
-function getVeeamO365Version {
+function Get-VeeamO365Version {
     <#
     .SYNOPSIS
         Checks the installation status of Veeam Backup for Microsoft 365.
@@ -55,7 +55,7 @@ function getVeeamO365Version {
     }
 }
 
-function importVeeamPowershellModule {
+function Import-VeeamPowershellModule {
     <#
     .SYNOPSIS
         Imports the Veeam Backup & Replication PowerShell module.
@@ -91,7 +91,7 @@ function importVeeamPowershellModule {
     }
 }
 
-function getVbrJobs {
+function Get-VeeamBrJobs {
     <#
     .SYNOPSIS
         Gets a list of all Veeam Backup & Replication backup jobs.
@@ -105,7 +105,7 @@ function getVbrJobs {
     }
 }
 
-function getVboJobs {
+function Get-VeeamO365Jobs {
     <#
     .SYNOPSIS
         Gets a list of all Veeam Backup for Microsoft 365 backup jobs.
@@ -119,7 +119,7 @@ function getVboJobs {
     }
 }
 
-function getVeeamServices {
+function Get-VeeamServices {
     <#
     .SYNOPSIS
         Gets a list of all Veeam Backup & Replication services and their status.
@@ -133,7 +133,7 @@ function getVeeamServices {
     }
 }
 
-function getFailedVbrJobs {
+function Get-FailedVbrJobs {
     <#
     .SYNOPSIS
         Retrieves a list of all jobs that have failed in Veeam Backup & Replication.
@@ -143,7 +143,7 @@ function getFailedVbrJobs {
     return $failedJobs
 }
 
-function getFailedVboJobs {
+function Get-FailedVboJobs {
     <#
     .SYNOPSIS
         Retrieves a list of all jobs that have failed in Veeam Backup for Microsoft 365.
@@ -152,3 +152,79 @@ function getFailedVboJobs {
     $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
     return $failedJobs
 }
+
+function Get-OldVbrJobs {
+    <#
+    .SYNOPSIS
+        Retrieves a list of all jobs that have not been run in the last specified number of days in Veeam Backup & Replication.
+    .PARAMETER Days
+        The number of days to check for old jobs. Default is 7.
+    #>
+    param (
+        [int]$Days = 7
+    )
+    $jobs = getVbrJobs
+    $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
+    return $oldJobs
+}
+
+function Get-OldVboJobs {
+    <#
+    .SYNOPSIS
+        Retrieves a list of all jobs that have not been run in the last specified number of days in Veeam Backup for Microsoft 365.
+    .PARAMETER Days
+        The number of days to check for old jobs. Default is 7.
+    #>
+    param (
+        [int]$Days = 7
+    )
+    $jobs = getVboJobs
+    $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
+    return $oldJobs
+}
+
+function Get-VeeamBrRepositories {
+    <#
+    .SYNOPSIS
+        Gets a list of all Veeam Backup & Replication repositories and their status.
+    #>
+    try {
+        $repositories = Get-VBRBackupRepository
+        return $repositories
+    } catch {
+        log "error" "Failed to get Veeam Backup & Replication repositories: $_"
+        exit 1
+    }
+}
+
+function Get-VeeamO365Repositories {
+    <#
+    .SYNOPSIS
+        Gets a list of all Veeam Backup for Microsoft 365 repositories and their status.
+    #>
+    try {
+        $repositories = Get-VBORepository
+        return $repositories
+    } catch {
+        log "error" "Failed to get Veeam Backup for Microsoft 365 repositories: $_"
+        exit 1
+    }
+}
+
+# ---------------------------------------------------------------------------
+#  Exports
+# ---------------------------------------------------------------------------
+Export-ModuleMember -Function @(
+    "Get-VeeamBrVersion",
+    "Get-VeeamO365Version",
+    "Import-VeeamPowershellModule",
+    "Get-VeeamBrJobs",
+    "Get-VeeamO365Jobs",
+    "Get-VeeamServices",
+    "Get-FailedVbrJobs",
+    "Get-FailedVboJobs",
+    "Get-OldVbrJobs",
+    "Get-OldVboJobs",
+    "Get-VeeamBrRepositories",
+    "Get-VeeamO365Repositories"
+)
