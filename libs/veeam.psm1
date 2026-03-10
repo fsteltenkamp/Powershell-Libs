@@ -25,8 +25,7 @@ function Get-VeeamBrVersion {
     # get values
     $veeamInstalled = Get-ChildItem -Path $registryKey, $registryKeyWow6432 -ErrorAction SilentlyContinue |
         Where-Object { $_.GetValue("DisplayName") -eq "$displayName" } |
-        Select-Object
-            @{Name="DisplayName"; Expression={$_.GetValue("DisplayName")}},
+        Select-Object @{Name="DisplayName"; Expression={$_.GetValue("DisplayName")}},
             @{Name="DisplayVersion"; Expression={$_.GetValue("DisplayVersion")}},
             @{Name="Publisher"; Expression={$_.GetValue("Publisher")}},
             @{Name="InstallDate"; Expression={$_.GetValue("InstallDate")}} -First 1
@@ -50,8 +49,7 @@ function Get-VeeamO365Version {
     # get values
     $veeamInstalled = Get-ChildItem -Path $registryKey, $registryKeyWow6432 -ErrorAction SilentlyContinue |
         Where-Object { $_.GetValue("DisplayName") -match $displayName } |
-        Select-Object
-            @{Name="DisplayName"; Expression={$_.GetValue("DisplayName")}},
+        Select-Object @{Name="DisplayName"; Expression={$_.GetValue("DisplayName")}},
             @{Name="DisplayVersion"; Expression={$_.GetValue("DisplayVersion")}},
             @{Name="Publisher"; Expression={$_.GetValue("Publisher")}},
             @{Name="InstallDate"; Expression={$_.GetValue("InstallDate")}} -First 1
@@ -146,9 +144,14 @@ function Get-FailedVbrJobs {
     .SYNOPSIS
         Retrieves a list of all jobs that have failed in Veeam Backup & Replication.
     #>
-    $jobs = Get-VeeamBrJobs
-    $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
-    return $failedJobs
+    try {
+        $jobs = Get-VeeamBrJobs
+        $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
+        return $failedJobs
+    } catch {
+        log "error" "Failed to get failed Veeam Backup & Replication jobs: $_"
+        exit 1
+    }
 }
 
 function Get-FailedVboJobs {
@@ -156,9 +159,14 @@ function Get-FailedVboJobs {
     .SYNOPSIS
         Retrieves a list of all jobs that have failed in Veeam Backup for Microsoft 365.
     #>
-    $jobs = Get-VeeamO365Jobs
-    $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
-    return $failedJobs
+    try {
+        $jobs = Get-VeeamO365Jobs
+        $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
+        return $failedJobs
+    } catch {
+        log "error" "Failed to get failed Veeam Backup for Microsoft 365 jobs: $_"
+        exit 1
+    }
 }
 
 function Get-OldVbrJobs {
@@ -171,9 +179,14 @@ function Get-OldVbrJobs {
     param (
         [int]$Days = 7
     )
-    $jobs = Get-VeeamBrJobs
-    $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
-    return $oldJobs
+    try {
+        $jobs = Get-VeeamBrJobs
+        $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
+        return $oldJobs
+    } catch {
+        log "error" "Failed to get old Veeam Backup & Replication jobs: $_"
+        exit 1
+    }
 }
 
 function Get-OldVboJobs {
@@ -186,9 +199,14 @@ function Get-OldVboJobs {
     param (
         [int]$Days = 7
     )
-    $jobs = Get-VeeamO365Jobs
-    $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
-    return $oldJobs
+    try {
+        $jobs = Get-VeeamO365Jobs
+        $oldJobs = $jobs | Where-Object { $_.GetLastRunTime() -lt (Get-Date).AddDays(-$Days) }
+        return $oldJobs
+    } catch {
+        log "error" "Failed to get old Veeam Backup for Microsoft 365 jobs: $_"
+        exit 1
+    }
 }
 
 function Get-VeeamBrRepositories {
