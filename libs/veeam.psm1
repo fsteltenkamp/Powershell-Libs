@@ -166,7 +166,7 @@ function Get-FailedJobs {
     }
 }
 
-function Get-VeeamBrRepositories {
+function Get-VeeamRepositories {
     <#
     .SYNOPSIS
         Gets a list of all Veeam Backup & Replication repositories and their status.
@@ -224,7 +224,7 @@ Export-ModuleMember -Function @(
     "Get-VeeamSessions",
     "Get-VeeamServices",
     "Get-FailedJobs",
-    "Get-VeeamBrRepositories",
+    "Get-VeeamRepositories",
     "Get-VeeamLicenseStatus",
     "Get-VeeamServerInfo"
 )
