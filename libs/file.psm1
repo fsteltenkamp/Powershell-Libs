@@ -69,10 +69,25 @@ function Confirm-Folder {
     }
 }
 
+function Check-Folder {
+    <#
+    .SYNOPSIS
+        Checks if a directory exists at the given path.
+    .PARAMETER Path
+        The path of the directory to check.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+    return Test-Path -Path $Path -PathType Container
+}
+
 # ---------------------------------------------------------------------------
 #  Exports
 # ---------------------------------------------------------------------------
 Export-ModuleMember -Function @(
     "New-Folder",
-    "Confirm-Folder"
+    "Confirm-Folder",
+    "Check-Folder"
 )
