@@ -118,4 +118,11 @@ function log {
     }
 }
 
-Export-ModuleMember -Function Set-LogLevel, Enable-Logfile, log
+# ---------------------------------------------------------------------------
+#  Exports
+# ---------------------------------------------------------------------------
+Export-ModuleMember -Function @(
+    "Set-LogLevel",
+    "Enable-Logfile",
+    "log"
+)

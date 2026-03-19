@@ -69,4 +69,10 @@ function Confirm-Folder {
     }
 }
 
-Export-ModuleMember -Function New-Folder, Confirm-Folder
+# ---------------------------------------------------------------------------
+#  Exports
+# ---------------------------------------------------------------------------
+Export-ModuleMember -Function @(
+    "New-Folder",
+    "Confirm-Folder"
+)

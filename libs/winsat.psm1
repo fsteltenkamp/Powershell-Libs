@@ -335,4 +335,17 @@ function Get-ParsedDiskResults {
     return $results
 }
 
-Export-ModuleMember -Function Set-XmlFileLocation, Invoke-WinSAT, Invoke-FullWinSAT, Invoke-WinSATDiskTest, Invoke-WinSATCpuTest, Invoke-WinSATMemoryTest, Invoke-WinSATGraphicsTest, Get-WinSATResults, Get-ParsedDiskResults
+# ---------------------------------------------------------------------------
+#  Exports
+# ---------------------------------------------------------------------------
+Export-ModuleMember -Function @(
+    "Set-XmlFileLocation",
+    "Invoke-WinSAT",
+    "Invoke-FullWinSAT",
+    "Invoke-WinSATDiskTest",
+    "Invoke-WinSATCpuTest",
+    "Invoke-WinSATMemoryTest",
+    "Invoke-WinSATGraphicsTest",
+    "Get-WinSATResults",
+    "Get-ParsedDiskResults"
+)

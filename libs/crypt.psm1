@@ -62,4 +62,10 @@ function Get-FileChecksum {
     return Get-FileHash -Path $FilePath -Algorithm $Algorithm
 }
 
-Export-ModuleMember -Function Get-StringHash, Get-FileChecksum
+# ---------------------------------------------------------------------------
+#  Exports
+# ---------------------------------------------------------------------------
+Export-ModuleMember -Function @(
+    "Get-StringHash",
+    "Get-FileChecksum"
+)

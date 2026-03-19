@@ -67,4 +67,11 @@ function Get-UnixTimestamp {
     return $ts
 }
 
-Export-ModuleMember -Function Get-PublicIp, Get-Hostname, Get-UnixTimestamp
+# ---------------------------------------------------------------------------
+#  Exports
+# ---------------------------------------------------------------------------
+Export-ModuleMember -Function @(
+    "Get-PublicIp",
+    "Get-Hostname",
+    "Get-UnixTimestamp"
+)
