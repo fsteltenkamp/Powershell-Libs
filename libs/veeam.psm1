@@ -26,8 +26,6 @@
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Documentation:
         - https://helpcenter.veeam.com/docs/vbr/powershell/
-        Exitcodes:
-        - 1: General error
 #>
 
 function Get-VeeamVersion {
@@ -50,7 +48,7 @@ function Get-VeeamVersion {
         return $veeamInstalled.DisplayVersion
     } else {
         log "error" "Veeam Backup & Replication is not installed."
-        exit 1
+        throw "Veeam Backup & Replication is not installed."
     }
 }
 
@@ -69,7 +67,7 @@ function Import-VeeamPowershellModule {
                 log "info" "Veeam Backup & Replication PowerShell SnapIn imported successfully."
             } catch {
                 log "error" "Failed to import Veeam Backup & Replication PowerShell SnapIn: $_"
-                exit 1
+                throw "Failed to import Veeam Backup & Replication PowerShell SnapIn: $_"
             }
         } else {
             log "info" "Veeam Backup & Replication PowerShell SnapIn is already imported."
@@ -82,7 +80,7 @@ function Import-VeeamPowershellModule {
                 log "info" "Veeam Backup & Replication PowerShell module imported successfully."
             } catch {
                 log "error" "Failed to import Veeam Backup & Replication PowerShell module: $_"
-                exit 1
+                throw "Failed to import Veeam Backup & Replication PowerShell module: $_"
             }
         } else {
             log "info" "Veeam Backup & Replication PowerShell module is already imported."
@@ -100,7 +98,7 @@ function Get-VeeamJobs {
         return $backupJobs
     } catch {
         log "error" "Failed to get Veeam Backup & Replication backup jobs: $_"
-        exit 1
+        throw "Failed to get Veeam Backup & Replication backup jobs: $_"
     }
 }
 
@@ -133,7 +131,7 @@ function Get-VeeamSessions {
         return $sessions
     } catch {
         log "error" "Failed to get Veeam Backup & Replication sessions: $_"
-        exit 1
+        throw "Failed to get Veeam Backup & Replication sessions: $_"
     }
 }
 
@@ -147,7 +145,7 @@ function Get-VeeamServices {
         return $services
     } catch {
         log "error" "Failed to get Veeam Backup & Replication services: $_"
-        exit 1
+        throw "Failed to get Veeam Backup & Replication services: $_"
     }
 }
 
@@ -162,7 +160,7 @@ function Get-FailedJobs {
         return $failedJobs
     } catch {
         log "error" "Failed to get failed Veeam Backup & Replication jobs: $_"
-        exit 1
+        throw "Failed to get failed Veeam Backup & Replication jobs: $_"
     }
 }
 
@@ -176,7 +174,7 @@ function Get-VeeamRepositories {
         return $repositories
     } catch {
         log "error" "Failed to get Veeam Backup & Replication repositories: $_"
-        exit 1
+        throw "Failed to get Veeam Backup & Replication repositories: $_"
     }
 }
 
@@ -193,7 +191,7 @@ function Get-VeeamLicenseStatus {
         return $license
     } catch {
         log "error" "Failed to get Veeam Backup & Replication license status: $_"
-        exit 1
+        throw "Failed to get Veeam Backup & Replication license status: $_"
     }
 }
 
@@ -210,7 +208,7 @@ function Get-VeeamServerInfo {
         return $serverInfo
     } catch {
         log "error" "Failed to get Veeam Backup & Replication server info: $_"
-        exit 1
+        throw "Failed to get Veeam Backup & Replication server info: $_"
     }
 }
 
