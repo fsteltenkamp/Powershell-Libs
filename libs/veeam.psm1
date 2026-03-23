@@ -22,7 +22,7 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.4
+        Version : 1.5
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Documentation:
         - https://helpcenter.veeam.com/docs/vbr/powershell/
