@@ -109,6 +109,51 @@ function Get-VeeamJobs {
     }
 }
 
+function Get-FailedJobs {
+    <#
+    .SYNOPSIS
+        Retrieves a list of all jobs that have failed in Veeam Backup & Replication.
+    #>
+    try {
+        $jobs = Get-VeeamJobs
+        $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
+        return $failedJobs
+    } catch {
+        log "error" "Failed to get failed Veeam Backup & Replication jobs: $_"
+        throw "Failed to get failed Veeam Backup & Replication jobs: $_"
+    }
+}
+
+function Get-SuccessfulJobs {
+    <#
+    .SYNOPSIS
+        Retrieves a list of all jobs that have not failed in Veeam Backup & Replication.
+    #>
+    try {
+        $jobs = Get-VeeamJobs
+        $successfulJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Success" }
+        return $successfulJobs
+    } catch {
+        log "error" "Failed to get successful Veeam Backup & Replication jobs: $_"
+        throw "Failed to get successful Veeam Backup & Replication jobs: $_"
+    }
+}
+
+function Get-OtherJobs {
+    <#
+    .SYNOPSIS
+        Retrieves a list of all jobs that have not failed or succeeded in Veeam Backup & Replication.
+    #>
+    try {
+        $jobs = Get-VeeamJobs
+        $otherJobs = $jobs | Where-Object { $_.GetLastResult() -ne "Failed" -and $_.GetLastResult() -ne "Success" }
+        return $otherJobs
+    } catch {
+        log "error" "Failed to get other Veeam Backup & Replication jobs: $_"
+        throw "Failed to get other Veeam Backup & Replication jobs: $_"
+    }
+}
+
 function Get-VeeamSessions {
     <#
     .SYNOPSIS
@@ -153,21 +198,6 @@ function Get-VeeamServices {
     } catch {
         log "error" "Failed to get Veeam Backup & Replication services: $_"
         throw "Failed to get Veeam Backup & Replication services: $_"
-    }
-}
-
-function Get-FailedJobs {
-    <#
-    .SYNOPSIS
-        Retrieves a list of all jobs that have failed in Veeam Backup & Replication.
-    #>
-    try {
-        $jobs = Get-VeeamJobs
-        $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
-        return $failedJobs
-    } catch {
-        log "error" "Failed to get failed Veeam Backup & Replication jobs: $_"
-        throw "Failed to get failed Veeam Backup & Replication jobs: $_"
     }
 }
 
