@@ -22,7 +22,7 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.3
+        Version : 1.4
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Documentation:
         - https://helpcenter.veeam.com/docs/vbr/powershell/
@@ -85,6 +85,13 @@ function Import-VeeamPowershellModule {
         } else {
             log "info" "Veeam Backup & Replication PowerShell module is already imported."
         }
+    }
+    # Check if commands are available, meaning the import was successful:
+    if ((Get-Command).Name -notcontains "Get-VBRJob") {
+        log "error" "Veeam Backup & Replication PowerShell module is not available after import."
+        throw "Veeam Backup & Replication PowerShell module is not available after import."
+    } else {
+        log "success" "Import of PS Module Successful."
     }
 }
 
