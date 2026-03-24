@@ -22,7 +22,7 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.5
+        Version : 1.5.1
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Documentation:
         - https://helpcenter.veeam.com/docs/vbr/powershell/
@@ -256,9 +256,11 @@ Export-ModuleMember -Function @(
     "Get-VeeamVersion",
     "Import-VeeamPowershellModule",
     "Get-VeeamJobs",
+    "Get-FailedJobs",
+    "Get-SuccessfulJobs",
+    "Get-OtherJobs",
     "Get-VeeamSessions",
     "Get-VeeamServices",
-    "Get-FailedJobs",
     "Get-VeeamRepositories",
     "Get-VeeamLicenseStatus",
     "Get-VeeamServerInfo"
