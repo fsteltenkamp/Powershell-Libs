@@ -44,11 +44,11 @@ function Get-SmbConnectionCheck {
     )
     try {
         # Check if the Host is reachable on TCP 445:
-        $host = ($Path -split '\\')[2]  # Extract the host from the SMB path
+        $targetHost = ($Path -split '\\')[2]  # Extract the host from the SMB path
         $port = 445
-        $connectionResult = Test-NetConnection -ComputerName $host -Port $port -InformationLevel Quiet
+        $connectionResult = Test-NetConnection -ComputerName $targetHost -Port $port -InformationLevel Quiet
         if (-not $connectionResult.TcpTestSucceeded) {
-            throw "Host '$host' is not reachable on port $port."
+            throw "Host '$targetHost' is not reachable on port $port."
         } else {
             # If the host is reachable, we can try to access the share. This will check if the share is accessible and if we have permissions to access it.
             try {
