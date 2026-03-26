@@ -91,6 +91,9 @@ function Import-VeeamPowershellModule {
         } else {
             Write-Host "Veeam Backup & Replication PowerShell module is already imported."
         }
+    } else {
+        Write-Host "Error: Unsupported Veeam Backup & Replication version: $veeamVersion"
+        throw "Unsupported Veeam Backup & Replication version: $veeamVersion"
     }
     # Check if commands are available, meaning the import was successful:
     if ((Get-Command).Name -notcontains "Get-VBRJob") {
