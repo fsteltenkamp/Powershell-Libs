@@ -19,10 +19,11 @@
 
     .DESCRIPTION
         Provides functions to check the status of Veeam Backup & Replication services and components.
+        Imports the SnapIn for 8,9,10 and the Module for 11,12,13 automatically based on the installed version.
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.5.1
+        Version : 1.6
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Documentation:
         - https://helpcenter.veeam.com/docs/vbr/powershell/
@@ -62,7 +63,7 @@ function Import-VeeamPowershellModule {
     #>
     # Depending on version of veeam BR, it is either a SnapIn or a regular module.
     $veeamVersion = Get-VeeamVersion
-    if ($veeamVersion -like "10*") {
+    if ($veeamVersion -like "10*" -or $veeamVersion -like "9*" -or $veeamVersion -like "8*") {
         # Veeam Backup & Replication v10 and lower use SnapIn
         if (-not (Get-PSSnapin -Name "VeeamPSSnapin" -ErrorAction SilentlyContinue)) {
             try {
@@ -76,7 +77,7 @@ function Import-VeeamPowershellModule {
         } else {
             Write-Host "Veeam Backup & Replication PowerShell SnapIn is already imported."
         }        
-    } else {
+    } elseif ($veeamVersion -like "11*" -or $veeamVersion -like "12*" -or $veeamVersion -like "13*") {
         # Veeam Backup & Replication v11 and higher use regular module
         if (-not (Get-Module -Name "Veeam.Backup.PowerShell" -ErrorAction SilentlyContinue)) {
             try {
@@ -97,7 +98,9 @@ function Import-VeeamPowershellModule {
         throw "Veeam Backup & Replication PowerShell module is not available after import."
     } else {
         Write-Host "Import of PS Module Successful."
+        return $true
     }
+    return $false
 }
 
 function Get-VeeamJobs {
