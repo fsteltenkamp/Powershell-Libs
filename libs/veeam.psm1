@@ -28,6 +28,9 @@
         - https://helpcenter.veeam.com/docs/vbr/powershell/
 #>
 
+$snapInLoaded = $false
+$moduleLoaded = $false
+
 function Get-VeeamVersion {
     <#
     .SYNOPSIS
@@ -47,7 +50,7 @@ function Get-VeeamVersion {
     if ($veeamInstalled) {
         return $veeamInstalled.DisplayVersion
     } else {
-        log "error" "Veeam Backup & Replication is not installed."
+        Write-Host "Error: Veeam Backup & Replication is not installed."
         throw "Veeam Backup & Replication is not installed."
     }
 }
@@ -64,34 +67,36 @@ function Import-VeeamPowershellModule {
         if (-not (Get-PSSnapin -Name "VeeamPSSnapin" -ErrorAction SilentlyContinue)) {
             try {
                 Add-PSSnapin "VeeamPSSnapin" -ErrorAction Stop
-                log "info" "Veeam Backup & Replication PowerShell SnapIn imported successfully."
+                Write-Host "Veeam Backup & Replication PowerShell SnapIn imported successfully."
+                $snapInLoaded = $true
             } catch {
-                log "error" "Failed to import Veeam Backup & Replication PowerShell SnapIn: $_"
+                Write-Host "Error: Failed to import Veeam Backup & Replication PowerShell SnapIn: $_"
                 throw "Failed to import Veeam Backup & Replication PowerShell SnapIn: $_"
             }
         } else {
-            log "info" "Veeam Backup & Replication PowerShell SnapIn is already imported."
-        }
+            Write-Host "Veeam Backup & Replication PowerShell SnapIn is already imported."
+        }        
     } else {
         # Veeam Backup & Replication v11 and higher use regular module
         if (-not (Get-Module -Name "Veeam.Backup.PowerShell" -ErrorAction SilentlyContinue)) {
             try {
                 Import-Module "Veeam.Backup.PowerShell" -ErrorAction Stop
-                log "info" "Veeam Backup & Replication PowerShell module imported successfully."
+                Write-Host "Veeam Backup & Replication PowerShell module imported successfully."
+                $moduleLoaded = $true
             } catch {
-                log "error" "Failed to import Veeam Backup & Replication PowerShell module: $_"
+                Write-Host "Error: Failed to import Veeam Backup & Replication PowerShell module: $_"
                 throw "Failed to import Veeam Backup & Replication PowerShell module: $_"
             }
         } else {
-            log "info" "Veeam Backup & Replication PowerShell module is already imported."
+            Write-Host "Veeam Backup & Replication PowerShell module is already imported."
         }
     }
     # Check if commands are available, meaning the import was successful:
     if ((Get-Command).Name -notcontains "Get-VBRJob") {
-        log "error" "Veeam Backup & Replication PowerShell module is not available after import."
+        Write-Host "Error: Veeam Backup & Replication PowerShell module is not available after import."
         throw "Veeam Backup & Replication PowerShell module is not available after import."
     } else {
-        log "success" "Import of PS Module Successful."
+        Write-Host "Import of PS Module Successful."
     }
 }
 
@@ -104,7 +109,7 @@ function Get-VeeamJobs {
         $backupJobs = Get-VBRJob
         return $backupJobs
     } catch {
-        log "error" "Failed to get Veeam Backup & Replication backup jobs: $_"
+        Write-Host "Error: Failed to get Veeam Backup & Replication backup jobs: $_"
         throw "Failed to get Veeam Backup & Replication backup jobs: $_"
     }
 }
@@ -119,7 +124,7 @@ function Get-FailedJobs {
         $failedJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Failed" }
         return $failedJobs
     } catch {
-        log "error" "Failed to get failed Veeam Backup & Replication jobs: $_"
+        Write-Host "Error: Failed to get failed Veeam Backup & Replication jobs: $_"
         throw "Failed to get failed Veeam Backup & Replication jobs: $_"
     }
 }
@@ -134,7 +139,7 @@ function Get-SuccessfulJobs {
         $successfulJobs = $jobs | Where-Object { $_.GetLastResult() -eq "Success" }
         return $successfulJobs
     } catch {
-        log "error" "Failed to get successful Veeam Backup & Replication jobs: $_"
+        Write-Host "Error: Failed to get successful Veeam Backup & Replication jobs: $_"
         throw "Failed to get successful Veeam Backup & Replication jobs: $_"
     }
 }
@@ -149,7 +154,7 @@ function Get-OtherJobs {
         $otherJobs = $jobs | Where-Object { $_.GetLastResult() -ne "Failed" -and $_.GetLastResult() -ne "Success" }
         return $otherJobs
     } catch {
-        log "error" "Failed to get other Veeam Backup & Replication jobs: $_"
+        Write-Host "Error: Failed to get other Veeam Backup & Replication jobs: $_"
         throw "Failed to get other Veeam Backup & Replication jobs: $_"
     }
 }
@@ -182,7 +187,7 @@ function Get-VeeamSessions {
         }
         return $sessions
     } catch {
-        log "error" "Failed to get Veeam Backup & Replication sessions: $_"
+        Write-Host "Error: Failed to get Veeam Backup & Replication sessions: $_"
         throw "Failed to get Veeam Backup & Replication sessions: $_"
     }
 }
@@ -196,7 +201,7 @@ function Get-VeeamServices {
         $services = Get-Service -Name "Veeam*"
         return $services
     } catch {
-        log "error" "Failed to get Veeam Backup & Replication services: $_"
+        Write-Host "Error: Failed to get Veeam Backup & Replication services: $_"
         throw "Failed to get Veeam Backup & Replication services: $_"
     }
 }
@@ -207,10 +212,9 @@ function Get-VeeamRepositories {
         Gets a list of all Veeam Backup & Replication repositories and their status.
     #>
     try {
-        $repositories = Get-VBRBackupRepository
-        return $repositories
+        return Get-VBRBackupRepository
     } catch {
-        log "error" "Failed to get Veeam Backup & Replication repositories: $_"
+        Write-Host "Error: Failed to get Veeam Backup & Replication repositories: $_"
         throw "Failed to get Veeam Backup & Replication repositories: $_"
     }
 }
@@ -224,10 +228,9 @@ function Get-VeeamLicenseStatus {
         Documentation: https://helpcenter.veeam.com/docs/vbr/powershell/get-vbrinstalledlicense.html
     #>
     try {
-        $license = Get-VBRInstalledLicense
-        return $license
+        return Get-VBRInstalledLicense
     } catch {
-        log "error" "Failed to get Veeam Backup & Replication license status: $_"
+        Write-Host "Error: Failed to get Veeam Backup & Replication license status: $_"
         throw "Failed to get Veeam Backup & Replication license status: $_"
     }
 }
@@ -244,7 +247,7 @@ function Get-VeeamServerInfo {
         $serverInfo = Get-VBRBackupServerInfo
         return $serverInfo
     } catch {
-        log "error" "Failed to get Veeam Backup & Replication server info: $_"
+        Write-Host "Error: Failed to get Veeam Backup & Replication server info: $_"
         throw "Failed to get Veeam Backup & Replication server info: $_"
     }
 }
