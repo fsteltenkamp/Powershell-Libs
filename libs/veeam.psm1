@@ -70,9 +70,11 @@ function Import-VeeamPowershellModule {
     .SYNOPSIS
         Imports the Veeam Backup & Replication PowerShell module.
     #>
+    $snapInMatches = @("10*", "9*", "8*")
+    $moduleMatches = @("11*", "12*", "13*")
     # Depending on version of veeam BR, it is either a SnapIn or a regular module.
     $veeamVersion = Get-VeeamVersion
-    if ($veeamVersion -like "10*" -or $veeamVersion -like "9*" -or $veeamVersion -like "8*") {
+    if ($snapInMatches -contains ($veeamVersion -split '\.')[0] + "*") {
         # Veeam Backup & Replication v10 and lower use SnapIn
         if (-not (Get-PSSnapin -Name "VeeamPSSnapin" -ErrorAction SilentlyContinue)) {
             try {
@@ -86,7 +88,7 @@ function Import-VeeamPowershellModule {
         } else {
             Write-Host "Veeam Backup & Replication PowerShell SnapIn is already imported."
         }        
-    } elseif ($veeamVersion -like "11*" -or $veeamVersion -like "12*" -or $veeamVersion -like "13*") {
+    } elseif ($moduleMatches -contains ($veeamVersion -split '\.')[0] + "*") {
         # Veeam Backup & Replication v11 and higher use regular module
         if (-not (Get-Module -Name "Veeam.Backup.PowerShell" -ErrorAction SilentlyContinue)) {
             try {
