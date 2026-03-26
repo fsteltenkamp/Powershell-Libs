@@ -223,12 +223,39 @@ function Get-VeeamLicenseStatus {
     <#
     .SYNOPSIS
         Returns details about the license installed on the Veeam Backup & Replication server.
+    .PARAMETER Verbose
+        Optional. If set, returns detailed information about the license. Otherwise, returns only the license status.
+    .PARAMETER Expiry
+        Optional. If set, returns the number of days until the license expires.
     .NOTES
         Uses Get-VBRInstalledLicense.
         Documentation: https://helpcenter.veeam.com/docs/vbr/powershell/get-vbrinstalledlicense.html
     #>
+    param (
+        [switch]$Verbose,
+        [switch]$Expiry
+    )
     try {
-        return Get-VBRInstalledLicense
+        $license = Get-VBRInstalledLicense
+        if ($Verbose) {
+            return $license
+        } else {
+            $status = $license.Status
+            if ($status -eq "Valid") {
+                return $true
+            } else {
+                return $false
+            }
+        }
+        if ($Expiry) {
+            if ($license.ExpirationDate -ne $null) {
+                $expirationDate = [datetime]$license.ExpirationDate
+                $daysUntilExpiration = ($expirationDate - (Get-Date)).TotalDays
+                return [math]::Round($daysUntilExpiration)
+            } else {
+                return $null
+            }
+        }
     } catch {
         Write-Host "Error: Failed to get Veeam Backup & Replication license status: $_"
         throw "Failed to get Veeam Backup & Replication license status: $_"
