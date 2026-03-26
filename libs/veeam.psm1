@@ -23,14 +23,13 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.7
+        Version : 1.7.1
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Documentation:
         - https://helpcenter.veeam.com/docs/vbr/powershell/
 #>
 
-$snapInLoaded = $false
-$moduleLoaded = $false
+$script:moduleLoaded = $false
 
 function Get-VeeamVersion {
     <#
@@ -70,10 +69,9 @@ function Import-VeeamPowershellModule {
     .SYNOPSIS
         Imports the Veeam Backup & Replication PowerShell module.
     .DESCRIPTION
-        Detects the installed Veeam version and loads the appropriate
-        PowerShell integration:
-          - v8 / v9 / v10  → PSSnapIn  (VeeamPSSnapin)
-          - v11+           → Module    (Veeam.Backup.PowerShell)
+        Detects the installed Veeam version and loads the Veeam.Backup.PowerShell
+        module. Requires Veeam v11 or newer (pwsh 7 does not support PSSnapIns
+        used by older releases).
         Use -Debug to see detailed import diagnostics.
     #>
     [CmdletBinding()]
@@ -81,63 +79,36 @@ function Import-VeeamPowershellModule {
 
     $veeamVersion = Get-VeeamVersion
     $majorVersion = [int]($veeamVersion -split '\.')[0]
-    Write-Host "Detected Veeam version string: $veeamVersion (major: $majorVersion)"
+    Write-Debug "Detected Veeam version string: $veeamVersion (major: $majorVersion)"
 
-    if ($majorVersion -ge 8 -and $majorVersion -le 10) {
-        # Veeam Backup & Replication v10 and lower use SnapIn
-        $snapInName = "VeeamPSSnapin"
-        Write-Host "Version $majorVersion requires PSSnapIn '$snapInName'."
-
-        if (Get-PSSnapin -Name $snapInName -ErrorAction SilentlyContinue) {
-            Write-Host "PSSnapIn '$snapInName' is already loaded."
-        } else {
-            # Verify the snap-in is registered on this system before loading
-            $registered = Get-PSSnapin -Registered -Name $snapInName -ErrorAction SilentlyContinue
-            if (-not $registered) {
-                throw "PSSnapIn '$snapInName' is not registered on this system. Ensure the Veeam console is installed."
-            }
-            Write-Host "PSSnapIn '$snapInName' is registered — loading now."
-            try {
-                Add-PSSnapin -Name $snapInName -ErrorAction Stop
-                Write-Host "PSSnapIn '$snapInName' loaded successfully."
-            } catch {
-                throw "Failed to load PSSnapIn '${snapInName}': $_"
-            }
-        }
-        $script:snapInLoaded = $true
-        $importedName = $snapInName
-
-    } elseif ($majorVersion -ge 11) {
-        # Veeam Backup & Replication v11 and higher use regular module
-        $moduleName = "Veeam.Backup.PowerShell"
-        Write-Host "Version $majorVersion requires module '$moduleName'."
-
-        if (Get-Module -Name $moduleName -ErrorAction SilentlyContinue) {
-            Write-Host "Module '$moduleName' is already loaded."
-        } else {
-            Write-Host "Module '$moduleName' not loaded — importing now."
-            try {
-                Import-Module $moduleName -ErrorAction Stop
-                Write-Host "Module '$moduleName' imported successfully."
-            } catch {
-                throw "Failed to import module '${moduleName}': $_"
-            }
-        }
-        $script:moduleLoaded = $true
-        $importedName = $moduleName
-
-    } else {
-        throw "Unsupported Veeam Backup & Replication major version: $majorVersion (full: $veeamVersion)"
+    if ($majorVersion -lt 11) {
+        throw "This script only supports Veeam Backup & Replication v11 and newer. Detected version: $veeamVersion (v$majorVersion). PSSnapIns required by older releases are not available in PowerShell 7."
     }
+
+    $moduleName = "Veeam.Backup.PowerShell"
+    Write-Debug "Version $majorVersion requires module '$moduleName'."
+
+    if (Get-Module -Name $moduleName -ErrorAction SilentlyContinue) {
+        Write-Debug "Module '$moduleName' is already loaded."
+    } else {
+        Write-Debug "Module '$moduleName' not loaded — importing now."
+        try {
+            Import-Module $moduleName -ErrorAction Stop
+            Write-Debug "Module '$moduleName' imported successfully."
+        } catch {
+            throw "Failed to import module '${moduleName}': $_"
+        }
+    }
+    $script:moduleLoaded = $true
 
     # Verify that Veeam commands are now available
     $probe = Get-Command -Name "Get-VBRJob" -ErrorAction SilentlyContinue
     if (-not $probe) {
-        throw "Veeam commands not available after importing '$importedName'. Get-VBRJob was not found."
+        throw "Veeam commands not available after importing '$moduleName'. Get-VBRJob was not found."
     }
 
-    Write-Host "Post-import check passed — Get-VBRJob is available."
-    Write-Host "Veeam PowerShell integration loaded via '$importedName' (v$veeamVersion)."
+    Write-Debug "Post-import check passed — Get-VBRJob is available."
+    Write-Host "Veeam PowerShell integration loaded via '$moduleName' (v$veeamVersion)."
     return $true
 }
 
