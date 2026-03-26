@@ -49,38 +49,32 @@ function New-Folder {
     Write-Host "Directory '$Path' created successfully."
 }
 
-function Confirm-Folder {
-    <#
-    .SYNOPSIS
-        Ensures a directory exists, creating it if necessary.
-    .PARAMETER Path
-        The path of the directory to confirm.
-    #>
-    param(
-        [Parameter(Mandatory)]
-        [string]$Path
-    )
-    if (Test-Path -Path $Path -PathType Container) {
-        Write-Host "$Path exists."
-    } else {
-        Write-Host "$Path does not exist, creating..."
-        New-Folder -Path $Path
-        Confirm-Folder -Path $Path
-    }
-}
-
-function Check-Folder {
+function Get-FolderExists {
     <#
     .SYNOPSIS
         Checks if a directory exists at the given path.
     .PARAMETER Path
         The path of the directory to check.
+    .PARAMETER CreateIfNotExists
+        If set, the function will create the directory if it does not exist.
     #>
     param(
         [Parameter(Mandatory)]
         [string]$Path
+        [switch]$CreateIfNotExists
     )
-    return Test-Path -Path $Path -PathType Container
+    if (Test-Path -Path $Path -PathType Container) {
+        Write-Host "$Path exists."
+        return $true
+    } else {
+        Write-Host "$Path does not exist."
+        if ($CreateIfNotExists) {
+            Write-Host "Creating $Path..."
+            New-Folder -Path $Path
+            return $true
+        }
+        return $false
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -88,6 +82,5 @@ function Check-Folder {
 # ---------------------------------------------------------------------------
 Export-ModuleMember -Function @(
     "New-Folder",
-    "Confirm-Folder",
-    "Check-Folder"
+    "Get-FolderExists"
 )

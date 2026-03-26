@@ -28,7 +28,7 @@
         - 1: General error
 #>
 
-function Check-SmbConnection {
+function Get-SmbConnectionCheck {
     <#
     .SYNOPSIS
         Checks if a connection to the specified SMB share can be established.
@@ -88,5 +88,5 @@ function Check-SmbConnection {
 #  Exports
 # ---------------------------------------------------------------------------
 Export-ModuleMember -Function @(
-    "Check-SmbConnection"
+    "Get-SmbConnectionCheck"
 )
