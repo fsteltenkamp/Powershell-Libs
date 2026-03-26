@@ -56,6 +56,24 @@ function Get-VeeamVersion {
     }
 }
 
+function Get-LatestVeeamVersion {
+    <#
+    .SYNOPSIS
+        Checks the latest available version of Veeam Backup & Replication.
+    #>
+    $fallback = "13.0.1.2067" # Fallback to latest known version in case the web request fails, to prevent errors in other functions that rely on this.
+    try {
+        $latestVersion = Invoke-WebRequest -Uri "https://www.veeam.com/products/downloads/latest-version.html" -UseBasicParsing |
+            Select-String -Pattern "Version\s\:\s(\d+\.\d+\.\d+\.\d+)" |
+            ForEach-Object { $_.Matches[0].Groups[1].Value }
+        return $latestVersion
+    } catch {
+        Write-Host "Error: Failed to get latest Veeam Backup & Replication version: $_"
+        Write-Host "Falling back to latest known version: $fallback"
+        return $fallback
+    }
+}
+
 function Import-VeeamPowershellModule {
     <#
     .SYNOPSIS
@@ -290,6 +308,7 @@ function Get-VeeamServerInfo {
 # ---------------------------------------------------------------------------
 Export-ModuleMember -Function @(
     "Get-VeeamVersion",
+    "Get-LatestVeeamVersion",
     "Import-VeeamPowershellModule",
     "Get-VeeamJobs",
     "Get-FailedJobs",
