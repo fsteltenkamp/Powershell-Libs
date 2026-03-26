@@ -22,7 +22,7 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.0
+        Version : 1.1.1
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Exitcodes:
         - 1: General error
@@ -60,7 +60,7 @@ function Get-FolderExists {
     #>
     param(
         [Parameter(Mandatory)]
-        [string]$Path
+        [string]$Path,
         [switch]$CreateIfNotExists
     )
     if (Test-Path -Path $Path -PathType Container) {
