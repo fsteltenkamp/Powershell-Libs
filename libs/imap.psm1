@@ -22,7 +22,7 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.1
+        Version : 1.1.1
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Documentation:
         - https://helpcenter.veeam.com/docs/vbr/powershell/
@@ -480,7 +480,7 @@ function Remove-ImapMessage {
         $expunge = Invoke-ImapTaggedCommand -Connection $Connection -Command "EXPUNGE"
         return $expunge.Status -eq "OK"
     } catch {
-        if ($Verbose) { Write-Host "Fehler beim Löschen der Nachricht $MessageNumber: $_" -ForegroundColor Red }
+        if ($Verbose) { Write-Host "Fehler beim Löschen der Nachricht $MessageNumber : $_" -ForegroundColor Red }
         return $false
     }
 }
@@ -508,7 +508,7 @@ function Move-ImapMessage {
 
         return Remove-ImapMessage -Connection $Connection -MessageNumber $MessageNumber -UseUid:$UseUid -SkipExpunge:(-not $ExpungeSource) -Verbose:$Verbose
     } catch {
-        if ($Verbose) { Write-Host "Fehler beim Verschieben der Nachricht $MessageNumber: $_" -ForegroundColor Red }
+        if ($Verbose) { Write-Host "Fehler beim Verschieben der Nachricht $MessageNumber : $_" -ForegroundColor Red }
         return $false
     }
 }
