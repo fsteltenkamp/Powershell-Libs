@@ -99,11 +99,12 @@ function Connect-ImapServer {
 function Get-ImapFolders {
     param(
         [hashtable]$Connection,
-        [bool]$Recursive
+        [bool]$Recursive,
+        [switch]$Verbose
     )
     
     try {
-        Write-Log "Info" "Rufe Ordnerliste ab..."
+        if ($Verbose) { Write-Host "Rufe Ordnerliste ab..." }
         
         $counter = $Connection.CommandCounter
         $Connection.CommandCounter++
@@ -130,10 +131,10 @@ function Get-ImapFolders {
             }
         }
         
-        Write-Log "Success" "Gefundene Ordner: $($folders.Count)"
+        if ($Verbose) { Write-Host "Gefundene Ordner: $($folders.Count)" -ForegroundColor Green }
         return $folders
     } catch {
-        Write-Log "Error" "Fehler beim Abrufen der Ordner: $_"
+        if ($Verbose) { Write-Host "Fehler beim Abrufen der Ordner: $_" -ForegroundColor Red }
         return @()
     }
 }
@@ -144,14 +145,15 @@ function Download-EmailsFromFolder {
         [string]$FolderName,
         [string]$TargetPath,
         [int]$MaxEmails,
-        [switch]$DeleteAfterDownload
+        [switch]$DeleteAfterDownload,
+        [switch]$Verbose
     )
     
     try {
         # Ordner erstellen
         if (-not (Test-Path $TargetPath)) {
             New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
-            Write-Log "Info" "Ordner erstellt: $TargetPath"
+            if ($Verbose) { Write-Host "Ordner erstellt: $TargetPath" }
         }
         
         # Ordner auswählen
@@ -178,7 +180,7 @@ function Download-EmailsFromFolder {
         }
         
         if ($emailCount -eq 0) {
-            Write-Log "Info" "Keine E-Mails in Ordner: $FolderName"
+            if ($Verbose) { Write-Host "Keine E-Mails in Ordner: $FolderName" }
             return 0
         }
         
@@ -187,7 +189,7 @@ function Download-EmailsFromFolder {
             $emailCount = $MaxEmails
         }
         
-        Write-Log "Info" "Lade $emailCount E-Mails aus '$FolderName' herunter..."
+        if ($Verbose) { Write-Host "Lade $emailCount E-Mails aus '$FolderName' herunter..." }
 
         $downloadedInFolder = 0
 
@@ -262,26 +264,26 @@ function Download-EmailsFromFolder {
                 $downloadedInFolder++
 
                 if ($DeleteAfterDownload) {
-                    if (Remove-ImapMessage -Connection $Connection -MessageNumber $msgNo -SkipExpunge) {
+                    if (Remove-ImapMessage -Connection $Connection -MessageNumber $msgNo -SkipExpunge -Verbose:$Verbose) {
                         Write-Host "X" -NoNewline
                     } else {
-                        Write-Log "Warning" "Nachricht $msgNo konnte nicht gelöscht werden."
+                        if ($Verbose) { Write-Host "Nachricht $msgNo konnte nicht gelöscht werden." -ForegroundColor Yellow }
                         Write-Host "!" -NoNewline
                     }
                 } else {
                     Write-Host "." -NoNewline
                 }
             } elseif (-not $sawLiteralStart) {
-                Write-Log "Warning" "Nachricht $msgNo in '$FolderName' konnte nicht gelesen werden (kein Literal im FETCH-Response)."
+                if ($Verbose) { Write-Host "Nachricht $msgNo in '$FolderName' konnte nicht gelesen werden (kein Literal im FETCH-Response)." -ForegroundColor Yellow }
             }
         }
         
         Write-Host ""  # Neue Zeile nach den Punkten
-        Write-Log "Success" "Ordner '$FolderName': $downloadedInFolder E-Mails heruntergeladen"
+        if ($Verbose) { Write-Host "Ordner '$FolderName': $downloadedInFolder E-Mails heruntergeladen" -ForegroundColor Green }
         
         return $downloadedInFolder
     } catch {
-        Write-Log "Error" "Fehler beim Download aus Ordner '$FolderName': $_"
+        if ($Verbose) { Write-Host "Fehler beim Download aus Ordner '$FolderName': $_" -ForegroundColor Red }
         $script:errorCount++
         return 0
     }
@@ -291,7 +293,8 @@ function Invoke-ImapTaggedCommand {
     param(
         [hashtable]$Connection,
         [string]$Command,
-        [bool]$ReadResponse = $true
+        [bool]$ReadResponse = $true,
+        [switch]$Verbose
     )
 
     try {
@@ -336,7 +339,7 @@ function Invoke-ImapTaggedCommand {
             Lines   = $lines
         }
     } catch {
-        Write-Log "Error" "Fehler beim IMAP-Befehl '$Command': $_"
+        if ($Verbose) { Write-Host "Fehler beim IMAP-Befehl '$Command': $_" -ForegroundColor Red }
         return [PSCustomObject]@{
             Tag     = $null
             Status  = "BAD"
@@ -360,7 +363,8 @@ function Select-ImapFolder {
 function Get-ImapMessageCount {
     param(
         [hashtable]$Connection,
-        [string]$FolderName
+        [string]$FolderName,
+        [switch]$Verbose
     )
 
     try {
@@ -378,7 +382,7 @@ function Get-ImapMessageCount {
 
         return 0
     } catch {
-        Write-Log "Error" "Fehler beim Abrufen der Nachrichtenanzahl: $_"
+        if ($Verbose) { Write-Host "Fehler beim Abrufen der Nachrichtenanzahl: $_" -ForegroundColor Red }
         return 0
     }
 }
@@ -387,7 +391,8 @@ function Search-ImapMessages {
     param(
         [hashtable]$Connection,
         [string]$Criteria = "ALL",
-        [switch]$UseUid
+        [switch]$UseUid,
+        [switch]$Verbose
     )
 
     try {
@@ -412,7 +417,7 @@ function Search-ImapMessages {
 
         return @()
     } catch {
-        Write-Log "Error" "Fehler beim Suchen von Nachrichten: $_"
+        if ($Verbose) { Write-Host "Fehler beim Suchen von Nachrichten: $_" -ForegroundColor Red }
         return @()
     }
 }
@@ -424,12 +429,13 @@ function Set-ImapMessageFlags {
         [string[]]$Flags,
         [switch]$Add,
         [switch]$Remove,
-        [switch]$UseUid
+        [switch]$UseUid,
+        [switch]$Verbose
     )
 
     try {
         if ($null -eq $Flags -or $Flags.Count -eq 0) {
-            Write-Log "Warning" "Keine Flags angegeben."
+            if ($Verbose) { Write-Host "Keine Flags angegeben." -ForegroundColor Yellow }
             return $false
         }
 
@@ -447,7 +453,7 @@ function Set-ImapMessageFlags {
         $result = Invoke-ImapTaggedCommand -Connection $Connection -Command "$idPrefix`STORE $MessageNumber $mode ($flagList)"
         return $result.Status -eq "OK"
     } catch {
-        Write-Log "Error" "Fehler beim Setzen von Flags: $_"
+        if ($Verbose) { Write-Host "Fehler beim Setzen von Flags: $_" -ForegroundColor Red }
         return $false
     }
 }
@@ -457,11 +463,12 @@ function Remove-ImapMessage {
         [hashtable]$Connection,
         [int]$MessageNumber,
         [switch]$UseUid,
-        [switch]$SkipExpunge
+        [switch]$SkipExpunge,
+        [switch]$Verbose
     )
 
     try {
-        $deletedSet = Set-ImapMessageFlags -Connection $Connection -MessageNumber $MessageNumber -Flags @('\\Deleted') -Add -UseUid:$UseUid
+        $deletedSet = Set-ImapMessageFlags -Connection $Connection -MessageNumber $MessageNumber -Flags @('\\Deleted') -Add -UseUid:$UseUid -Verbose:$Verbose
         if (-not $deletedSet) {
             return $false
         }
@@ -473,7 +480,7 @@ function Remove-ImapMessage {
         $expunge = Invoke-ImapTaggedCommand -Connection $Connection -Command "EXPUNGE"
         return $expunge.Status -eq "OK"
     } catch {
-        Write-Log "Error" "Fehler beim Löschen der Nachricht $MessageNumber: $_"
+        if ($Verbose) { Write-Host "Fehler beim Löschen der Nachricht $MessageNumber: $_" -ForegroundColor Red }
         return $false
     }
 }
@@ -484,7 +491,8 @@ function Move-ImapMessage {
         [int]$MessageNumber,
         [string]$DestinationFolder,
         [switch]$UseUid,
-        [switch]$ExpungeSource
+        [switch]$ExpungeSource,
+        [switch]$Verbose
     )
 
     try {
@@ -498,9 +506,9 @@ function Move-ImapMessage {
             return $false
         }
 
-        return Remove-ImapMessage -Connection $Connection -MessageNumber $MessageNumber -UseUid:$UseUid -SkipExpunge:(-not $ExpungeSource)
+        return Remove-ImapMessage -Connection $Connection -MessageNumber $MessageNumber -UseUid:$UseUid -SkipExpunge:(-not $ExpungeSource) -Verbose:$Verbose
     } catch {
-        Write-Log "Error" "Fehler beim Verschieben der Nachricht $MessageNumber: $_"
+        if ($Verbose) { Write-Host "Fehler beim Verschieben der Nachricht $MessageNumber: $_" -ForegroundColor Red }
         return $false
     }
 }
@@ -510,15 +518,17 @@ function Get-ImapMessages {
         [hashtable]$Connection,
         [string]$FolderName,
         [string]$TargetPath,
-        [int]$MaxEmails = 0
+        [int]$MaxEmails = 0,
+        [switch]$Verbose
     )
 
-    return Download-EmailsFromFolder -Connection $Connection -FolderName $FolderName -TargetPath $TargetPath -MaxEmails $MaxEmails
+    return Download-EmailsFromFolder -Connection $Connection -FolderName $FolderName -TargetPath $TargetPath -MaxEmails $MaxEmails -Verbose:$Verbose
 }
 
 function Disconnect-ImapServer {
     param(
-        [hashtable]$Connection
+        [hashtable]$Connection,
+        [switch]$Verbose
     )
     
     try {
@@ -535,9 +545,9 @@ function Disconnect-ImapServer {
         $Connection.Stream.Dispose()
         $Connection.Client.Dispose()
         
-        Write-Log "Info" "Verbindung getrennt"
+        if ($Verbose) { Write-Host "Verbindung getrennt" }
     } catch {
-        Write-Log "Warning" "Fehler beim Trennen der Verbindung: $_"
+        if ($Verbose) { Write-Host "Fehler beim Trennen der Verbindung: $_" -ForegroundColor Yellow }
     }
 }
 
