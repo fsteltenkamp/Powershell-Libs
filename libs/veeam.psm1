@@ -93,6 +93,9 @@ function Import-VeeamPowershellModule {
     } else {
         Write-Debug "Module '$moduleName' not loaded — importing now."
         try {
+            # Setzt TLS 1.2 als Sicherheitsprotokoll, um den Fehler "The type initializer for
+            # 'Veeam.Backup.Common.SSslOptions' threw an exception" beim Modulimport zu verhindern.
+            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
             Import-Module $moduleName -ErrorAction Stop
             Write-Debug "Module '$moduleName' imported successfully."
         } catch {
