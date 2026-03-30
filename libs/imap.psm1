@@ -194,18 +194,29 @@ function Download-EmailsFromFolder {
             $counter = $Connection.CommandCounter
             $Connection.CommandCounter++
             $tag = "A$($counter.ToString('000'))"
-            $fetchCmd = "$tag FETCH $msgNo BODY.PEEK[]"
+            $fetchCmd = "$tag FETCH $msgNo (INTERNALDATE BODY.PEEK[])"
 
             $writer.WriteLine($fetchCmd)
             $writer.Flush()
 
             $inMessageData = $false
             $sawLiteralStart = $false
+            $receivedDate = $null
             $messageBuilder = New-Object System.Text.StringBuilder
 
             while ($true) {
                 $line = $reader.ReadLine()
                 if ($null -eq $line) { break }
+
+                if (-not $receivedDate -and $line -match 'INTERNALDATE "([^"]+)"') {
+                    $internalDateRaw = $matches[1]
+                    $internalDateNormalized = $internalDateRaw -replace ' ([+-]\d{2})(\d{2})$', ' $1:$2'
+
+                    $parsedInternalDate = [DateTimeOffset]::MinValue
+                    if ([DateTimeOffset]::TryParse($internalDateNormalized, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AllowWhiteSpaces, [ref]$parsedInternalDate)) {
+                        $receivedDate = $parsedInternalDate.LocalDateTime
+                    }
+                }
 
                 if (-not $inMessageData -and $line -match '^\* \d+ FETCH .*\{\d+\}$') {
                     $inMessageData = $true
@@ -231,7 +242,22 @@ function Download-EmailsFromFolder {
 
             if ($messageBuilder.Length -gt 0) {
                 $filename = "$TargetPath\Email_$($msgNo.ToString('00000')).eml"
+
+                if (-not $receivedDate) {
+                    $dateHeaderMatch = [System.Text.RegularExpressions.Regex]::Match($messageBuilder.ToString(), '(?im)^Date:\s*(.+)$')
+                    if ($dateHeaderMatch.Success) {
+                        $parsedHeaderDate = [DateTimeOffset]::MinValue
+                        if ([DateTimeOffset]::TryParse($dateHeaderMatch.Groups[1].Value.Trim(), [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AllowWhiteSpaces, [ref]$parsedHeaderDate)) {
+                            $receivedDate = $parsedHeaderDate.LocalDateTime
+                        }
+                    }
+                }
+
                 [System.IO.File]::WriteAllText($filename, $messageBuilder.ToString(), [System.Text.Encoding]::UTF8)
+                if ($receivedDate) {
+                    [System.IO.File]::SetLastWriteTime($filename, $receivedDate)
+                }
+
                 $downloadedInFolder++
                 Write-Host "." -NoNewline
             } elseif (-not $sawLiteralStart) {
