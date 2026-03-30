@@ -143,7 +143,8 @@ function Download-EmailsFromFolder {
         [hashtable]$Connection,
         [string]$FolderName,
         [string]$TargetPath,
-        [int]$MaxEmails
+        [int]$MaxEmails,
+        [switch]$DeleteAfterDownload
     )
     
     try {
@@ -259,7 +260,17 @@ function Download-EmailsFromFolder {
                 }
 
                 $downloadedInFolder++
-                Write-Host "." -NoNewline
+
+                if ($DeleteAfterDownload) {
+                    if (Remove-ImapMessage -Connection $Connection -MessageNumber $msgNo -SkipExpunge) {
+                        Write-Host "X" -NoNewline
+                    } else {
+                        Write-Log "Warning" "Nachricht $msgNo konnte nicht gelöscht werden."
+                        Write-Host "!" -NoNewline
+                    }
+                } else {
+                    Write-Host "." -NoNewline
+                }
             } elseif (-not $sawLiteralStart) {
                 Write-Log "Warning" "Nachricht $msgNo in '$FolderName' konnte nicht gelesen werden (kein Literal im FETCH-Response)."
             }
