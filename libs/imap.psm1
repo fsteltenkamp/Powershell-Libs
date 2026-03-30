@@ -22,7 +22,7 @@
 
     .NOTES
         Author  : Florian Steltenkamp
-        Version : 1.0
+        Version : 1.1
         Url     : https://github.com/fsteltenkamp/powershell-libs
         Documentation:
         - https://helpcenter.veeam.com/docs/vbr/powershell/
@@ -250,6 +250,235 @@ function Download-EmailsFromFolder {
     }
 }
 
+function Invoke-ImapTaggedCommand {
+    param(
+        [hashtable]$Connection,
+        [string]$Command,
+        [bool]$ReadResponse = $true
+    )
+
+    try {
+        $counter = $Connection.CommandCounter
+        $Connection.CommandCounter++
+        $tag = "A$($counter.ToString('000'))"
+        $fullCommand = "$tag $Command"
+
+        $writer = New-Object System.IO.StreamWriter($Connection.Stream)
+        $writer.WriteLine($fullCommand)
+        $writer.Flush()
+
+        if (-not $ReadResponse) {
+            return [PSCustomObject]@{
+                Tag     = $tag
+                Status  = $null
+                Command = $fullCommand
+                Lines   = @()
+            }
+        }
+
+        $lines = @()
+        $status = $null
+        $reader = $Connection.Reader
+
+        while ($true) {
+            $line = $reader.ReadLine()
+            if ($null -eq $line) { break }
+
+            $lines += $line
+
+            if ($line -match "^$tag (OK|BAD|NO)") {
+                $status = $matches[1]
+                break
+            }
+        }
+
+        return [PSCustomObject]@{
+            Tag     = $tag
+            Status  = $status
+            Command = $fullCommand
+            Lines   = $lines
+        }
+    } catch {
+        Write-Log "Error" "Fehler beim IMAP-Befehl '$Command': $_"
+        return [PSCustomObject]@{
+            Tag     = $null
+            Status  = "BAD"
+            Command = $Command
+            Lines   = @()
+        }
+    }
+}
+
+function Select-ImapFolder {
+    param(
+        [hashtable]$Connection,
+        [string]$FolderName
+    )
+
+    $safeFolder = $FolderName.Replace('"', '""')
+    $result = Invoke-ImapTaggedCommand -Connection $Connection -Command "SELECT `"$safeFolder`""
+    return $result.Status -eq "OK"
+}
+
+function Get-ImapMessageCount {
+    param(
+        [hashtable]$Connection,
+        [string]$FolderName
+    )
+
+    try {
+        $safeFolder = $FolderName.Replace('"', '""')
+        $result = Invoke-ImapTaggedCommand -Connection $Connection -Command "STATUS `"$safeFolder`" (MESSAGES)"
+        if ($result.Status -ne "OK") {
+            return 0
+        }
+
+        foreach ($line in $result.Lines) {
+            if ($line -match '\* STATUS .*\(.*MESSAGES\s+(\d+)') {
+                return [int]$matches[1]
+            }
+        }
+
+        return 0
+    } catch {
+        Write-Log "Error" "Fehler beim Abrufen der Nachrichtenanzahl: $_"
+        return 0
+    }
+}
+
+function Search-ImapMessages {
+    param(
+        [hashtable]$Connection,
+        [string]$Criteria = "ALL",
+        [switch]$UseUid
+    )
+
+    try {
+        $prefix = ""
+        if ($UseUid) { $prefix = "UID " }
+
+        $result = Invoke-ImapTaggedCommand -Connection $Connection -Command "$prefix`SEARCH $Criteria"
+        if ($result.Status -ne "OK") {
+            return @()
+        }
+
+        foreach ($line in $result.Lines) {
+            if ($line -match '^\* SEARCH\s*(.*)$') {
+                $ids = $matches[1].Trim()
+                if ([string]::IsNullOrWhiteSpace($ids)) {
+                    return @()
+                }
+
+                return ($ids -split '\s+' | Where-Object { $_ -match '^\d+$' } | ForEach-Object { [int]$_ })
+            }
+        }
+
+        return @()
+    } catch {
+        Write-Log "Error" "Fehler beim Suchen von Nachrichten: $_"
+        return @()
+    }
+}
+
+function Set-ImapMessageFlags {
+    param(
+        [hashtable]$Connection,
+        [int]$MessageNumber,
+        [string[]]$Flags,
+        [switch]$Add,
+        [switch]$Remove,
+        [switch]$UseUid
+    )
+
+    try {
+        if ($null -eq $Flags -or $Flags.Count -eq 0) {
+            Write-Log "Warning" "Keine Flags angegeben."
+            return $false
+        }
+
+        $mode = "FLAGS.SILENT"
+        if ($Add) {
+            $mode = "+FLAGS.SILENT"
+        } elseif ($Remove) {
+            $mode = "-FLAGS.SILENT"
+        }
+
+        $idPrefix = ""
+        if ($UseUid) { $idPrefix = "UID " }
+
+        $flagList = ($Flags -join ' ')
+        $result = Invoke-ImapTaggedCommand -Connection $Connection -Command "$idPrefix`STORE $MessageNumber $mode ($flagList)"
+        return $result.Status -eq "OK"
+    } catch {
+        Write-Log "Error" "Fehler beim Setzen von Flags: $_"
+        return $false
+    }
+}
+
+function Remove-ImapMessage {
+    param(
+        [hashtable]$Connection,
+        [int]$MessageNumber,
+        [switch]$UseUid,
+        [switch]$SkipExpunge
+    )
+
+    try {
+        $deletedSet = Set-ImapMessageFlags -Connection $Connection -MessageNumber $MessageNumber -Flags @('\\Deleted') -Add -UseUid:$UseUid
+        if (-not $deletedSet) {
+            return $false
+        }
+
+        if ($SkipExpunge) {
+            return $true
+        }
+
+        $expunge = Invoke-ImapTaggedCommand -Connection $Connection -Command "EXPUNGE"
+        return $expunge.Status -eq "OK"
+    } catch {
+        Write-Log "Error" "Fehler beim Löschen der Nachricht $MessageNumber: $_"
+        return $false
+    }
+}
+
+function Move-ImapMessage {
+    param(
+        [hashtable]$Connection,
+        [int]$MessageNumber,
+        [string]$DestinationFolder,
+        [switch]$UseUid,
+        [switch]$ExpungeSource
+    )
+
+    try {
+        $safeFolder = $DestinationFolder.Replace('"', '""')
+
+        $copyPrefix = ""
+        if ($UseUid) { $copyPrefix = "UID " }
+
+        $copyResult = Invoke-ImapTaggedCommand -Connection $Connection -Command "$copyPrefix`COPY $MessageNumber `"$safeFolder`""
+        if ($copyResult.Status -ne "OK") {
+            return $false
+        }
+
+        return Remove-ImapMessage -Connection $Connection -MessageNumber $MessageNumber -UseUid:$UseUid -SkipExpunge:(-not $ExpungeSource)
+    } catch {
+        Write-Log "Error" "Fehler beim Verschieben der Nachricht $MessageNumber: $_"
+        return $false
+    }
+}
+
+function Get-ImapMessages {
+    param(
+        [hashtable]$Connection,
+        [string]$FolderName,
+        [string]$TargetPath,
+        [int]$MaxEmails = 0
+    )
+
+    return Download-EmailsFromFolder -Connection $Connection -FolderName $FolderName -TargetPath $TargetPath -MaxEmails $MaxEmails
+}
+
 function Disconnect-ImapServer {
     param(
         [hashtable]$Connection
@@ -282,6 +511,13 @@ Export-ModuleMember -Function @(
     'Connect-ImapServer',
     'Send-ImapCommand',
     'Get-ImapFolders',
+    'Select-ImapFolder',
+    'Get-ImapMessageCount',
+    'Search-ImapMessages',
+    'Set-ImapMessageFlags',
+    'Remove-ImapMessage',
+    'Move-ImapMessage',
+    'Download-EmailsFromFolder',
     'Get-ImapMessages',
     'Disconnect-ImapServer'
 )
