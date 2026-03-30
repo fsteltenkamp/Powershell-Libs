@@ -279,7 +279,6 @@ function Disconnect-ImapServer {
 #  Exports
 # ---------------------------------------------------------------------------
 Export-ModuleMember -Function @(
-    'Load-Mailkit',
     'Connect-ImapServer',
     'Send-ImapCommand',
     'Get-ImapFolders',
